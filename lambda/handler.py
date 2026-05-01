@@ -9,42 +9,55 @@ table = dynamodb.Table(os.environ['TABLE_NAME'])
 topic_arn = os.environ['SNS_TOPIC']
 
 def lambda_handler(event, context):
-    body = json.loads(event['body'])
+    try:
+        print("RAW EVENT:", json.dumps(event))
 
-    amount = body.get('amount', 0)
-    risk_score = 0
+        # 🔥 Proper body extraction
+        body = event.get("body")
 
-    if amount > 1000:
-        risk_score += 70
+        if isinstance(body, str):
+            body = json.loads(body)
 
-    
-    if risk_score > 60:
-        decision = "Blocked"
-    
-    elif risk_score > 30:
-        decision = "FLAGGED"
+        if body is None:
+            body = {}
 
-    else:
-        decision = "APPROVED"
+        print("PARSED BODY:", body)
 
-    
-    item = {
-        "tracnsaction_id": body["transaction_id"],
-        "user_id": body["user_id"],
-        "amount": amount,
-        "decision": decision,
-        "risk_score": risk_score
-    }
+        # Validate required field
+        if "transaction_id" not in body:
+            raise Exception("transaction_id is required")
 
-    table.put_item(Item=item)
+        amount = body.get("amount", 0)
 
-    if decision != "APPROVED":
-        sns.publish(
-            TopicArn=topic_arn,
-            Message=f"Fraud Alert: {item}"
-        )
+        risk_score = 0
+        if amount > 1000:
+            risk_score += 70
 
-    return {
-        "statusCode": 200,
-        "body": json.dumps(item)
-    }
+        if risk_score > 60:
+            decision = "BLOCKED"
+        elif risk_score > 30:
+            decision = "FLAGGED"
+        else:
+            decision = "APPROVED"
+
+        item = {
+            "transaction_id": body["transaction_id"],  # no fallback now
+            "user_id": body.get("user_id", "unknown"),
+            "amount": amount,
+            "decision": decision,
+            "risk_score": risk_score
+        }
+
+        table.put_item(Item=item)
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps(item)
+        }
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
