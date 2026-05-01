@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Lambda build
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
