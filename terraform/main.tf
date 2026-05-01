@@ -115,5 +115,3 @@ resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
 
 
 
-# testing
-#final test
