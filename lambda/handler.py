@@ -12,23 +12,25 @@ def lambda_handler(event, context):
     try:
         print("RAW EVENT:", json.dumps(event))
 
-        # 🔥 Proper body extraction
-        body = event.get("body")
+        # ✅ Safe body extraction
+        body = event.get("body", {})
 
         if isinstance(body, str):
-            body = json.loads(body)
-
-        if body is None:
-            body = {}
+            try:
+                body = json.loads(body)
+            except json.JSONDecodeError:
+                raise Exception("Invalid JSON in request body")
 
         print("PARSED BODY:", body)
 
-        # Validate required field
-        if "transaction_id" not in body:
+        # ✅ Strong validation
+        transaction_id = body.get("transaction_id")
+        if not transaction_id:
             raise Exception("transaction_id is required")
 
         amount = body.get("amount", 0)
 
+        # Fraud logic
         risk_score = 0
         if amount > 1000:
             risk_score += 70
@@ -41,12 +43,14 @@ def lambda_handler(event, context):
             decision = "APPROVED"
 
         item = {
-            "transaction_id": body["transaction_id"],  # no fallback now
+            "transaction_id": transaction_id,
             "user_id": body.get("user_id", "unknown"),
             "amount": amount,
             "decision": decision,
             "risk_score": risk_score
         }
+
+        print("ITEM TO SAVE:", item)
 
         table.put_item(Item=item)
 
@@ -61,5 +65,3 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
-    
-    # testing
