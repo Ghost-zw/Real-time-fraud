@@ -54,6 +54,22 @@ def lambda_handler(event, context):
 
         table.put_item(Item=item)
 
+#  Send alert for suspicious/fraud transactions
+
+        if decision != "Approved":
+            sns.publish(
+                TopicArn=topic_arn,
+                Subject="Fraud Alert",
+                Message=json.dumps({
+                    "transaction_id": transaction_id,
+                    "user_id": body.get("user_id"),
+                    "amount": amount,
+                    "decision": decision,
+                    "risk_score": risk_score
+                })
+            )
+
+
         return {
             "statusCode": 200,
             "body": json.dumps(item)
