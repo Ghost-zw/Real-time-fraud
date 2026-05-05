@@ -17,6 +17,12 @@ resource "aws_sns_topic" "fraud_alerts" {
   name = "${var.project_name}-${var.environment}-alerts"
 }
 
+# SNS policy
+resource "aws_iam_role_policy_attachment" "lambda_sns" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+}
+
 resource "aws_lambda_function" "fraud_handler" {
   function_name = "${var.project_name}-${var.environment}-handler"
   runtime       = var.lambda_runtime
