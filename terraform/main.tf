@@ -121,7 +121,10 @@ resource "aws_iam_policy" "dynamodb_policy" {
           "dynamodb:Query",
           "dynamodb:Scan"
         ]
-        Resource = aws_dynamodb_table.transactions.arn
+        Resource = [
+        aws_dynamodb_table.transactions.arn,
+        "${aws_dynamodb_table.transactions.arn}/index/*"
+      ]
       }
     ]
   })
