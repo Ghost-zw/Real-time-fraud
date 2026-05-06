@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+from datetime import datetime, timezone
 
 dynamodb = boto3.resource('dynamodb')
 sns = boto3.client('sns')
@@ -47,7 +48,8 @@ def lambda_handler(event, context):
             "user_id": body.get("user_id", "unknown"),
             "amount": amount,
             "decision": decision,
-            "risk_score": risk_score
+            "risk_score": risk_score,
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
         print("ITEM TO SAVE:", item)
