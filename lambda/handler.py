@@ -2,6 +2,7 @@ import json
 import os
 import boto3
 from datetime import datetime, timezone
+from boto3.dynamodb.conditions import Key
 
 dynamodb = boto3.resource('dynamodb')
 sns = boto3.client('sns')
@@ -31,10 +32,25 @@ def lambda_handler(event, context):
 
         amount = body.get("amount", 0)
 
+        user_id = body.get("user_id", "unknown")
+
+        # Query user transaction history
+        response = table.query(
+            IndexName="user_id-index",
+            KeyConditionExpression=Key("user_id").eq(user_id)
+        )
+
+        previous_transactions = response.get("Items", [])
+
+        print("PREVIOUS TRANSACTIONS:", len(previous_transactions))
+
         # Fraud logic
         risk_score = 0
         if amount > 1000:
             risk_score += 70
+
+        if len(previous_transactions) >= 5:
+            risk_score += 40
 
         if risk_score > 60:
             decision = "BLOCKED"
@@ -83,3 +99,4 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
+    
