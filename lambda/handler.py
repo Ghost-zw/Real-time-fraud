@@ -74,7 +74,7 @@ def lambda_handler(event, context):
 
 #  Send alert for suspicious/fraud transactions
 
-        if decision != "Approved":
+        if decision in ["FLAGGED", "BLOCKED"]:
             sns.publish(
                 TopicArn=topic_arn,
                 Subject="Fraud Alert",
