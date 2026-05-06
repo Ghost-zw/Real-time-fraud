@@ -2,6 +2,7 @@ provider "aws" {
   region = var.aws_region
 }
 
+
 resource "aws_dynamodb_table" "transactions" {
   name         = "${var.project_name}-${var.environment}-transactions"
   billing_mode = "PAY_PER_REQUEST"
@@ -11,7 +12,19 @@ resource "aws_dynamodb_table" "transactions" {
     name = "transaction_id"
     type = "S"
   }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "user_id-index"
+    hash_key        = "user_id"
+    projection_type = "ALL"
+  }
 }
+
 
 resource "aws_sns_topic" "fraud_alerts" {
   name = "${var.project_name}-${var.environment}-alerts"
