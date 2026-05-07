@@ -1,7 +1,7 @@
 import json
 import os
 import boto3
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from boto3.dynamodb.conditions import Key
 
 dynamodb = boto3.resource('dynamodb')
@@ -41,15 +41,36 @@ def lambda_handler(event, context):
         )
 
         previous_transactions = response.get("Items", [])
+        # Current UTC time
+        now = datetime.now(timezone.utc)
+
+        # Define sliding window
+        window_start = now - timedelta(seconds=60)
+
+        recent_transactions = []
 
         print("PREVIOUS TRANSACTIONS:", len(previous_transactions))
+
+        for txn in previous_transactions:
+
+            txn_timestamp = txn.get("timestamp")
+
+            if txn_timestamp:
+                txn_time = datetime.fromisoformat(
+                    txn_timestamp.replace("Z", "+00:00")
+                )
+
+                if txn_time >= window_start:
+                    recent_transactions.append(txn)
+
+        print("RECENT TRANSACTIONS:", len(recent_transactions))
 
         # Fraud logic
         risk_score = 0
         if amount > 1000:
             risk_score += 70
 
-        if len(previous_transactions) >= 5:
+        if len(recent_transactions) >= 5:
             risk_score += 40
 
         if risk_score > 60:
