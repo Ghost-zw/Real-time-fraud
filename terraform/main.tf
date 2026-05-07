@@ -56,7 +56,7 @@ resource "aws_lambda_function" "fraud_handler" {
   }
 }
   }
-}
+
 
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-${var.environment}-lambda-role"
