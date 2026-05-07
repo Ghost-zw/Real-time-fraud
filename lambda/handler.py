@@ -14,6 +14,21 @@ def lambda_handler(event, context):
     try:
         print("RAW EVENT:", json.dumps(event))
 
+        headers = event.get("headers", {})
+
+        incoming_api_key = headers.get("x-api-key")
+
+        expected_api_key = os.environ.get("API_KEY")
+
+        if incoming_api_key != expected_api_key:
+
+            return {
+                "statusCode": 401,
+                "body": json.dumps({
+                    "error": "Unauthorized"
+                })
+            }
+
         # ✅ Safe body extraction
         body = event.get("body", {})
 

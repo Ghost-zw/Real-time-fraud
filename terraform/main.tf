@@ -48,11 +48,13 @@ resource "aws_lambda_function" "fraud_handler" {
   timeout      = var.lambda_timeout
   memory_size  = var.lambda_memory_size
 
-  environment {
-    variables = {
-      TABLE_NAME = aws_dynamodb_table.transactions.name
-      SNS_TOPIC  = aws_sns_topic.fraud_alerts.arn
-    }
+ environment {
+  variables = {
+    TABLE_NAME = aws_dynamodb_table.transactions.name
+    SNS_TOPIC  = aws_sns_topic.fraud_alerts.arn
+    API_KEY    = var.api_key
+  }
+}
   }
 }
 
