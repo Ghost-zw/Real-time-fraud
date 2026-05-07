@@ -65,13 +65,39 @@ def lambda_handler(event, context):
 
         print("RECENT TRANSACTIONS:", len(recent_transactions))
 
+        # Calculate average historical spend
+        historical_amounts = []
+
+        for txn in previous_transactions:
+
+            amount_value = txn.get("amount")
+
+            if amount_value is not None:
+                historical_amounts.append(float(amount_value))
+
+        average_spend = 0
+
+        if historical_amounts:
+            average_spend = sum(historical_amounts) / len(historical_amounts)
+
+        print("AVERAGE SPEND:", average_spend)
+
         # Fraud logic
         risk_score = 0
         if amount > 1000:
             risk_score += 70
 
+        # Velocity Scoring
         if len(recent_transactions) >= 5:
             risk_score += 40
+
+        # Behavioral baseline scoring
+        if average_spend > 0:
+
+            if amount > average_spend * 5:
+                risk_score += 50
+
+        print("BEHAVIORAL ANOMALY DETECTED")
 
         if risk_score > 60:
             decision = "BLOCKED"
