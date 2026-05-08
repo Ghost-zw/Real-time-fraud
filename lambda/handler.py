@@ -152,13 +152,20 @@ def lambda_handler(event, context):
 
         return {
             "statusCode": 200,
-            "body": json.dumps(item)
-        }
+            "body": json.dumps({
+                "status": "success",
+                "message": "Transaction processed successfully",
+                "data": item
+    })
+}
 
     except Exception as e:
         print("ERROR:", str(e))
         return {
             "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
+            "body": json.dumps({
+                "status": "error",
+                "message": str(e)
+            })
         }
     
