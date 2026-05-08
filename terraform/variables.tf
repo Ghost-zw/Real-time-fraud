@@ -39,3 +39,9 @@ variable "lambda_memory_size" {
   type        = number
   default     = 128
 }
+
+variable "api_key" {
+  description = "API authentication key"
+  type        = string
+}
+
