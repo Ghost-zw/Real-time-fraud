@@ -13,10 +13,14 @@ topic_arn = os.environ['SNS_TOPIC']
 def lambda_handler(event, context):
     try:
         print("RAW EVENT:", json.dumps(event))
+        print("HEADERS:", headers)
 
-        headers = event.get("headers", {})
+        headers = event.get("headers") or {}
 
-        incoming_api_key = headers.get("x-api-key")
+        incoming_api_key = (
+            headers.get("x-api-key")
+            or headers.get("X-API-Key")
+        )
 
         expected_api_key = os.environ.get("API_KEY")
 
@@ -25,7 +29,8 @@ def lambda_handler(event, context):
             return {
                 "statusCode": 401,
                 "body": json.dumps({
-                    "error": "Unauthorized"
+                    "status": "error",
+                    "message": "Unauthorized"
                 })
             }
 
