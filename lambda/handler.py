@@ -4,6 +4,15 @@ import boto3
 from datetime import datetime, timezone, timedelta
 from boto3.dynamodb.conditions import Key
 
+def log_event(event_type, details):
+    log = {
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        **details
+    }
+
+    print(json.dumps(log))
+
 dynamodb = boto3.resource('dynamodb')
 sns = boto3.client('sns')
 
@@ -12,10 +21,14 @@ topic_arn = os.environ['SNS_TOPIC']
 
 def lambda_handler(event, context):
     try:
-        print("RAW EVENT:", json.dumps(event))
+        log_event("api_request_received", {
+            "raw_event": event
+            })
         headers = event.get("headers") or {}
 
-        print("HEADERS:", headers)
+        log_event("headers_received", {
+                    "headers": headers
+                })
 
         incoming_api_key = (
             headers.get("x-api-key")
@@ -25,6 +38,9 @@ def lambda_handler(event, context):
         expected_api_key = os.environ.get("API_KEY")
 
         if incoming_api_key != expected_api_key:
+            log_event("authentication_failed", {
+                    "provided_api_key": incoming_api_key
+                })
 
             return {
                 "statusCode": 401,
@@ -43,7 +59,11 @@ def lambda_handler(event, context):
             except json.JSONDecodeError:
                 raise Exception("Invalid JSON in request body")
 
-        print("PARSED BODY:", body)
+        log_event("transaction_received", {
+            "transaction_id": body.get("transaction_id"),
+            "user_id": body.get("user_id"),
+            "amount": body.get("amount")
+        })
 
         # ✅ Strong validation
         transaction_id = body.get("transaction_id")
@@ -69,7 +89,10 @@ def lambda_handler(event, context):
 
         recent_transactions = []
 
-        print("PREVIOUS TRANSACTIONS:", len(previous_transactions))
+        log_event("historical_transactions_loaded", {
+            "user_id": user_id,
+            "count": len(previous_transactions)
+        })
 
         for txn in previous_transactions:
 
@@ -83,7 +106,10 @@ def lambda_handler(event, context):
                 if txn_time >= window_start:
                     recent_transactions.append(txn)
 
-        print("RECENT TRANSACTIONS:", len(recent_transactions))
+        log_event("velocity_check", {
+            "user_id": user_id,
+            "recent_transaction_count": len(recent_transactions)
+        })
 
         # Calculate average historical spend
         historical_amounts = []
@@ -100,7 +126,10 @@ def lambda_handler(event, context):
         if historical_amounts:
             average_spend = sum(historical_amounts) / len(historical_amounts)
 
-        print("AVERAGE SPEND:", average_spend)
+        log_event("behavioral_baseline", {
+            "user_id": user_id,
+            "average_spend": average_spend
+        })
 
         # Fraud logic
         
@@ -132,6 +161,14 @@ def lambda_handler(event, context):
             decision = "FLAGGED"
         else:
             decision = "APPROVED"
+        
+        log_event("fraud_evaluated", {
+                "transaction_id": transaction_id,
+                "user_id": user_id,
+                "decision": decision,
+                "risk_score": risk_score,
+                "reasons": reasons
+            })
 
         item = {
             "transaction_id": transaction_id,
@@ -143,13 +180,22 @@ def lambda_handler(event, context):
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-        print("ITEM TO SAVE:", item)
+        log_event("transaction_saved", {
+            "transaction_id": transaction_id,
+            "decision": decision
+        })
 
         table.put_item(Item=item)
 
 #  Send alert for suspicious/fraud transactions
 
         if decision in ["FLAGGED", "BLOCKED"]:
+
+            log_event("fraud_alert_sent", {
+                "transaction_id": transaction_id,
+                "decision": decision
+            })
+                        
             sns.publish(
                 TopicArn=topic_arn,
                 Subject="Fraud Alert",
@@ -174,7 +220,9 @@ def lambda_handler(event, context):
 }
 
     except Exception as e:
-        print("ERROR:", str(e))
+        log_event("error_occurred", {
+                "error": str(e)
+            })
         return {
             "statusCode": 500,
             "body": json.dumps({
