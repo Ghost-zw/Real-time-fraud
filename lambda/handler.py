@@ -103,19 +103,25 @@ def lambda_handler(event, context):
         print("AVERAGE SPEND:", average_spend)
 
         # Fraud logic
+        
         risk_score = 0
+        reasons = []
+
         if amount > 1000:
             risk_score += 70
+            reasons.append("High transaction amount")
 
         # Velocity Scoring
         if len(recent_transactions) >= 5:
             risk_score += 40
+            reasons.append("Velocity threshold exceeded")
 
         # Behavioral baseline scoring
         if average_spend > 0:
 
             if amount > average_spend * 5:
                 risk_score += 50
+                reasons.append("Behavioral spending anomaly detected")
                 print("BEHAVIORAL ANOMALY DETECTED")
 
         
@@ -133,6 +139,7 @@ def lambda_handler(event, context):
             "amount": amount,
             "decision": decision,
             "risk_score": risk_score,
+            "reasons": reasons,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
@@ -151,7 +158,8 @@ def lambda_handler(event, context):
                     "user_id": body.get("user_id"),
                     "amount": amount,
                     "decision": decision,
-                    "risk_score": risk_score
+                    "risk_score": risk_score,
+                    "reasons": reasons
                 })
             )
 
