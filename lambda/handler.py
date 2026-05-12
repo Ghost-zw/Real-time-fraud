@@ -13,9 +13,9 @@ topic_arn = os.environ['SNS_TOPIC']
 def lambda_handler(event, context):
     try:
         print("RAW EVENT:", json.dumps(event))
-        print("HEADERS:", headers)
-
         headers = event.get("headers") or {}
+
+        print("HEADERS:", headers)
 
         incoming_api_key = (
             headers.get("x-api-key")
@@ -116,8 +116,9 @@ def lambda_handler(event, context):
 
             if amount > average_spend * 5:
                 risk_score += 50
+                print("BEHAVIORAL ANOMALY DETECTED")
 
-        print("BEHAVIORAL ANOMALY DETECTED")
+        
 
         if risk_score > 60:
             decision = "BLOCKED"
