@@ -38,10 +38,25 @@ jobs:
           ls -lah lambda
           unzip -l lambda/lambda.zip
 
+      - name: Verify API Key Exists
+        run: |
+          if [ -z "$TF_VAR_api_key" ]; then
+            echo "API key missing"
+            exit 1
+          else
+            echo "API key found"
+          fi
+        env:
+          TF_VAR_api_key: ${{ secrets.TF_VAR_api_key }}
+
       - name: Terraform Init
         run: terraform init
         working-directory: terraform
+        env:
+          TF_VAR_api_key: ${{ secrets.TF_VAR_api_key }}
 
       - name: Terraform Apply
-        run: terraform apply -lock-timeout=5m -auto-approve
+        run: terraform apply -input=false -lock-timeout=5m -auto-approve
         working-directory: terraform
+        env:
+          TF_VAR_api_key: ${{ secrets.TF_VAR_api_key }}
