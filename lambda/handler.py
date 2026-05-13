@@ -89,9 +89,9 @@ def lambda_handler(event, context):
             }
 
         # ✅ Safe body extraction
-        body = event.get("body", {})
+        body = event.get("body") or {}
 
-        if isinstance(body, str):
+        if body and isinstance(body, str):
             try:
                 body = json.loads(body)
             except json.JSONDecodeError:
