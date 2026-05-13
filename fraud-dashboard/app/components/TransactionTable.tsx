@@ -1,45 +1,109 @@
 'use client'
 
-import { useState } from 'react'
-import { transactions } from '../data/mockData'
+import { useEffect, useState } from 'react'
 import TransactionFilters from './TransactionFilters'
+import { API_URL, API_KEY } from '../config'
+
+type Transaction = {
+  transaction_id: string
+  user_id: string
+  amount: number
+  risk_score: number
+  decision: string
+  reasons: string[]
+  timestamp: string
+}
 
 export default function TransactionTable() {
-  const [search, setSearch] = useState('')
-  const [decision, setDecision] = useState('ALL')
-  const [risk, setRisk] = useState('ALL')
+  const [transactions, setTransactions] =
+    useState<Transaction[]>([])
 
-  const filteredTransactions = transactions.filter(
-    (txn) => {
+  const [loading, setLoading] =
+    useState(true)
+
+  const [search, setSearch] =
+    useState('')
+
+  const [decision, setDecision] =
+    useState('ALL')
+
+  const [risk, setRisk] =
+    useState('ALL')
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  async function fetchTransactions() {
+    try {
+      const response = await fetch(
+        API_URL,
+        {
+          headers: {
+            'x-api-key': API_KEY,
+          },
+        }
+      )
+
+      const data =
+        await response.json()
+
+      setTransactions(
+        data.transactions || []
+      )
+    } catch (error) {
+      console.error(
+        'Failed to fetch transactions',
+        error
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredTransactions =
+    transactions.filter((txn) => {
       const matchesSearch =
-        txn.id
+        txn.transaction_id
           .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        txn.user
+          .includes(
+            search.toLowerCase()
+          ) ||
+        txn.user_id
           .toLowerCase()
-          .includes(search.toLowerCase())
+          .includes(
+            search.toLowerCase()
+          )
 
       const matchesDecision =
         decision === 'ALL' ||
-        txn.decision === decision
+        txn.decision ===
+          decision
 
       const matchesRisk =
         risk === 'ALL' ||
         (risk === 'HIGH' &&
-          txn.riskScore >= 80) ||
+          txn.risk_score >= 80) ||
         (risk === 'MEDIUM' &&
-          txn.riskScore >= 40 &&
-          txn.riskScore < 80) ||
+          txn.risk_score >= 40 &&
+          txn.risk_score < 80) ||
         (risk === 'LOW' &&
-          txn.riskScore < 40)
+          txn.risk_score < 40)
 
       return (
         matchesSearch &&
         matchesDecision &&
         matchesRisk
       )
-    }
-  )
+    })
+
+  if (loading) {
+    return (
+      <div className="text-slate-400">
+        Loading transactions...
+      </div>
+    )
+  }
 
   return (
     <section className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
@@ -73,49 +137,70 @@ export default function TransactionTable() {
               <th>Amount</th>
               <th>Risk Score</th>
               <th>Decision</th>
-              <th>Reason</th>
-              <th>Time</th>
+              <th>Reasons</th>
+              <th>Timestamp</th>
             </tr>
           </thead>
 
           <tbody>
-            {filteredTransactions.map((txn) => (
-              <tr
-                key={txn.id}
-                className="border-t border-slate-800 hover:bg-slate-800/40 transition-all"
-              >
-                <td className="p-4 font-medium">
-                  {txn.id}
-                </td>
+            {filteredTransactions.map(
+              (txn) => (
+                <tr
+                  key={
+                    txn.transaction_id
+                  }
+                  className="border-t border-slate-800 hover:bg-slate-800/40 transition-all"
+                >
+                  <td className="p-4">
+                    {
+                      txn.transaction_id
+                    }
+                  </td>
 
-                <td>{txn.user}</td>
+                  <td>
+                    {txn.user_id}
+                  </td>
 
-                <td className="font-medium">
-                  {txn.amount}
-                </td>
+                  <td>
+                    ${txn.amount}
+                  </td>
 
-                <td>
-                  {txn.riskScore}
-                </td>
+                  <td>
+                    {
+                      txn.risk_score
+                    }
+                  </td>
 
-                <td>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      txn.decision === 'BLOCKED'
-                        ? 'bg-red-500/20 text-red-400'
-                        : txn.decision === 'FLAGGED'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-green-500/20 text-green-400'
-                    }`}
-                  >
-                    {txn.decision}
-                  </span>
-                </td>
+                  <td>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        txn.decision ===
+                        'BLOCKED'
+                          ? 'bg-red-500/20 text-red-400'
+                          : txn.decision ===
+                            'FLAGGED'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-green-500/20 text-green-400'
+                      }`}
+                    >
+                      {txn.decision}
+                    </span>
+                  </td>
 
-                <td>{txn.reasons}</td>
-                <td>{txn.timestamp}</td>
-              </tr>
-            ))}
+                  <td>
+                    {txn.reasons?.join(
+                      ', '
+                    )}
+                  </td>
+
+                  <td>
+                    {new Date(
+                      txn.timestamp
+                    ).toLocaleString()}
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>

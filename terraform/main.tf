@@ -79,8 +79,28 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 }
 
 resource "aws_apigatewayv2_api" "api" {
-  name          = "${var.project_name}-${var.environment}-api"
+  name          = "fraud-detection-api"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = [
+      "http://localhost:3000"
+    ]
+
+    allow_methods = [
+      "GET",
+      "POST",
+      "OPTIONS"
+    ]
+
+    allow_headers = [
+      "content-type",
+      "x-api-key"
+    ]
+
+    expose_headers = ["*"]
+    max_age         = 300
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda_integration" {
