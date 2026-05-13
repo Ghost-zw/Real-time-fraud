@@ -1,3 +1,4 @@
+from decimal import Decimal
 import json
 import os
 import boto3
@@ -10,6 +11,12 @@ def log_event(event_type, details):
         "timestamp": datetime.now(timezone.utc).isoformat(),
         **details
     }
+
+def decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+
+    raise TypeError
 
     print(json.dumps(log))
 
@@ -86,11 +93,14 @@ def lambda_handler(event, context):
 
             return {
                 "statusCode": 200,
-                "body": json.dumps({
-                    "status": "success",
-                    "count": len(items),
-                    "transactions": items
-                })
+                "body": json.dumps(
+                    {
+                        "status": "success",
+                        "count": len(items),
+                        "transactions": items
+                    },
+                    default=decimal_default
+                )
             }
 
         # ✅ Safe body extraction
