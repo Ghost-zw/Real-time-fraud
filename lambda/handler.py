@@ -49,6 +49,44 @@ def lambda_handler(event, context):
                     "message": "Unauthorized"
                 })
             }
+        
+        # Get HTTP method
+                
+        http_method = (
+            event.get("requestContext", {})
+            .get("http", {})
+            .get("method")
+        )
+
+        # -------------------------
+        # GET /transactions
+        # -------------------------
+        if http_method == "GET":
+
+            log_event("transactions_fetch_requested", {})
+
+            response = table.scan()
+
+            items = response.get("Items", [])
+
+            # newest first
+            items.sort(
+                key=lambda x: x.get("timestamp", ""),
+                reverse=True
+            )
+
+            log_event("transactions_returned", {
+                "count": len(items)
+            })
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps({
+                    "status": "success",
+                    "count": len(items),
+                    "transactions": items
+                })
+            }
 
         # ✅ Safe body extraction
         body = event.get("body", {})
