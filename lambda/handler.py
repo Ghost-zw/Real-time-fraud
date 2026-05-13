@@ -56,7 +56,12 @@ def lambda_handler(event, context):
             event.get("requestContext", {})
             .get("http", {})
             .get("method")
+            or event.get("httpMethod")
         )
+
+        log_event("http_method_detected", {
+            "method": http_method
+        })
 
         # -------------------------
         # GET /transactions
