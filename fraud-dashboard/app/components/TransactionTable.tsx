@@ -127,82 +127,93 @@ export default function TransactionTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-slate-800 text-slate-300 uppercase text-sm">
-            <tr>
-              <th className="p-4">
-                Transaction ID
-              </th>
-              <th>User</th>
-              <th>Amount</th>
-              <th>Risk Score</th>
-              <th>Decision</th>
-              <th>Reasons</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
+              <table className="w-full text-left table-fixed">
+                  <thead className="bg-slate-800 text-slate-300 uppercase text-sm">
+                      <tr>
+                          <th className="p-4 w-[220px]">
+                              Transaction ID
+                          </th>
 
-          <tbody>
-            {filteredTransactions.map(
-              (txn) => (
-                <tr
-                  key={
-                    txn.transaction_id
-                  }
-                  className="border-t border-slate-800 hover:bg-slate-800/40 transition-all"
-                >
-                  <td className="p-4">
-                    {
-                      txn.transaction_id
-                    }
-                  </td>
+                          <th className="w-[160px]">
+                              User
+                          </th>
 
-                  <td>
-                    {txn.user_id}
-                  </td>
+                          <th className="w-[120px]">
+                              Amount
+                          </th>
 
-                  <td>
-                    ${txn.amount}
-                  </td>
+                          <th className="w-[120px]">
+                              Risk Score
+                          </th>
 
-                  <td>
-                    {
-                      txn.risk_score
-                    }
-                  </td>
+                          <th className="w-[150px]">
+                              Decision
+                          </th>
 
-                  <td>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        txn.decision ===
-                        'BLOCKED'
-                          ? 'bg-red-500/20 text-red-400'
-                          : txn.decision ===
-                            'FLAGGED'
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'bg-green-500/20 text-green-400'
-                      }`}
-                    >
-                      {txn.decision}
-                    </span>
-                  </td>
+                          <th className="w-[260px]">
+                              Reasons
+                          </th>
 
-                  <td>
-                    {txn.reasons?.join(
-                      ', '
-                    )}
-                  </td>
+                          <th className="w-[220px]">
+                              Timestamp
+                          </th>
+                      </tr>
+                  </thead>
 
-                  <td>
-                    {new Date(
-                      txn.timestamp
-                    ).toLocaleString()}
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
+                  <tbody>
+                      {filteredTransactions.map(
+                          (txn) => (
+                              <tr
+                                  key={txn.transaction_id}
+                                  className="border-t border-slate-800 hover:bg-slate-800/40 transition-all"
+                              >
+                                  <td className="p-4 font-medium truncate">
+                                      {txn.transaction_id}
+                                  </td>
+
+                                  <td className="truncate">
+                                      {txn.user_id}
+                                  </td>
+
+                                  <td className="font-medium">
+                                      ${txn.amount}
+                                  </td>
+
+                                  <td>
+                                      <span className="font-semibold text-cyan-400">
+                                          {txn.risk_score}
+                                      </span>
+                                  </td>
+
+                                  <td>
+                                      <span
+                                          className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${txn.decision ===
+                                                  'BLOCKED'
+                                                  ? 'bg-red-500/20 text-red-400'
+                                                  : txn.decision ===
+                                                      'FLAGGED'
+                                                      ? 'bg-yellow-500/20 text-yellow-400'
+                                                      : 'bg-green-500/20 text-green-400'
+                                              }`}
+                                      >
+                                          {txn.decision}
+                                      </span>
+                                  </td>
+
+                                  <td className="text-slate-300">
+                                      {txn.reasons?.join(', ')}
+                                  </td>
+
+                                  <td className="text-slate-400 text-sm whitespace-nowrap">
+                                      {new Date(
+                                          txn.timestamp
+                                      ).toLocaleString()}
+                                  </td>
+                              </tr>
+                          )
+                      )}
+                  </tbody>
+              </table>
       </div>
     </section>
   )
