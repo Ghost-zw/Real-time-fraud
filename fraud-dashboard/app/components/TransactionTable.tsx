@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import TransactionFilters from './TransactionFilters'
-import { API_URL, API_KEY } from '../config'
+
 
 type Transaction = {
   transaction_id: string
@@ -14,12 +14,17 @@ type Transaction = {
   timestamp: string
 }
 
-export default function TransactionTable() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>([])
+type Props = {
+  transactions: Transaction[]
+  loading: boolean
+}
 
-  const [loading, setLoading] =
-    useState(true)
+export default function TransactionTable({
+  transactions,
+  loading,
+}: Props) {
+ 
+  
 
   const [search, setSearch] =
     useState('')
@@ -30,37 +35,9 @@ export default function TransactionTable() {
   const [risk, setRisk] =
     useState('ALL')
 
-  useEffect(() => {
-    fetchTransactions()
-  }, [])
-
-  async function fetchTransactions() {
-    try {
-      const response = await fetch(
-        API_URL,
-        {
-          headers: {
-            'x-api-key': API_KEY,
-          },
-        }
-      )
-
-      const data =
-        await response.json()
-
-      setTransactions(
-        data.transactions || []
-      )
-    } catch (error) {
-      console.error(
-        'Failed to fetch transactions',
-        error
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
+    
+   
+  
   const filteredTransactions =
     transactions.filter((txn) => {
       const matchesSearch =

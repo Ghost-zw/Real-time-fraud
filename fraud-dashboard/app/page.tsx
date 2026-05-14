@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 
 import Sidebar from './components/Sidebar'
 import Navbar from './components/Navbar'
@@ -7,8 +10,70 @@ import FraudCharts from './components/FraudCharts'
 import AlertPanel from './components/Alerts'
 import StatusBar from './components/StatusBar'
 
+import useFraudMetrics from './hooks/useFraudMetrics'
+import { API_KEY, API_URL } from './config'
+
+type Transaction = {
+  transaction_id: string
+  user_id: string
+  amount: number
+  risk_score: number
+  decision: string
+  reasons: string[]
+  timestamp: string
+}
 
 export default function Home() {
+  const [transactions, setTransactions] =
+    useState<Transaction[]>([])
+
+  const [loading, setLoading] =
+    useState(true)
+
+  async function fetchTransactions() {
+    try {
+      const response = await fetch(
+        API_URL,
+        {
+          headers: {
+            'x-api-key': API_KEY,
+          },
+        }
+      )
+
+      const data =
+        await response.json()
+
+      setTransactions(
+        data.transactions || []
+      )
+    } catch (error) {
+      console.error(
+        'Failed to fetch transactions',
+        error
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTransactions()
+
+    const interval =
+      setInterval(() => {
+        fetchTransactions()
+      }, 5000)
+
+    return () =>
+      clearInterval(interval)
+  }, [])
+
+  const metrics =
+    useFraudMetrics(
+      transactions
+    )
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
       <Sidebar />
@@ -18,22 +83,56 @@ export default function Home() {
         <StatusBar />
 
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8">
-          <MetricCard title="Approved" value="240" />
-          <MetricCard title="Flagged" value="19" />
-          <MetricCard title="Blocked" value="7" />
-          <MetricCard title="Fraud Rate" value="8%" />
-          <MetricCard title="High Risk Users" value="12" />
+          <MetricCard
+            title="Approved"
+            value={String(metrics.approved)}
+          />
+
+          <MetricCard
+            title="Flagged"
+            value={String(metrics.flagged)}
+          />
+
+          <MetricCard
+            title="Blocked"
+            value={String(metrics.blocked)}
+          />
+
+          <MetricCard
+            title="Fraud Rate"
+            value={`${metrics.fraudRate}%`}
+          />
+
+          <MetricCard
+            title="High Risk Users"
+            value={String(
+              metrics.highRiskUsers
+            )}
+          />
         </section>
 
-        <FraudCharts />
+        <FraudCharts
+          transactions={
+            transactions
+          }
+        />
 
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
-          <TransactionTable />
-        </div>
+          <div className="xl:col-span-2">
+            <TransactionTable
+              transactions={
+                transactions
+              }
+              loading={loading}
+            />
+          </div>
 
-        <AlertPanel />
-      </section>
+          <AlertPanel
+            transactions={
+              transactions
+            }
+          />
+        </section>
       </main>
     </div>
   )

@@ -1,69 +1,111 @@
-const alerts = [
-  {
-    level: 'BLOCKED',
-    user: 'user_secure',
-    amount: '$1500',
-    reason: 'Velocity threshold exceeded',
-    risk: 110,
-    time: '14:20',
-  },
-  {
-    level: 'FLAGGED',
-    user: 'user_123',
-    amount: '$750',
-    reason: 'Behavior anomaly',
-    risk: 45,
-    time: '14:15',
-  },
-]
+type Transaction = {
+  transaction_id: string
+  user_id: string
+  amount: number
+  risk_score: number
+  decision: string
+  reasons: string[]
+  timestamp: string
+}
 
-export default function AlertPanel() {
+type Props = {
+  transactions: Transaction[]
+}
+
+export default function AlertPanel({
+  transactions,
+}: Props) {
+  const alerts =
+    transactions
+      .filter(
+        (txn) =>
+          txn.decision ===
+            'BLOCKED' ||
+          txn.decision ===
+            'FLAGGED'
+      )
+      .sort(
+        (a, b) =>
+          new Date(
+            b.timestamp
+          ).getTime() -
+          new Date(
+            a.timestamp
+          ).getTime()
+      )
+      .slice(0, 5)
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-lg h-fit">
-      <h2 className="text-2xl font-semibold mb-5">
+    <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-lg">
+      <h2 className="text-2xl font-semibold mb-6">
         Live Fraud Alerts
       </h2>
 
-      <div className="space-y-4">
-        {alerts.map((alert, index) => (
-          <div
-            key={index}
-            className="bg-slate-800 rounded-2xl p-4 border border-slate-700 hover:border-cyan-500/20 transition-all"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span
-                className={`font-bold ${
-                  alert.level === 'BLOCKED'
-                    ? 'text-red-400'
-                    : 'text-yellow-400'
-                }`}
-              >
-                {alert.level}
-              </span>
-
-              <span className="text-slate-400 text-sm">
-                {alert.time}
-              </span>
-            </div>
-
-            <p className="font-medium text-lg">
-              {alert.user}
-            </p>
-
-            <p className="text-slate-300 mt-1">
-              {alert.amount}
-            </p>
-
-            <p className="text-slate-400 text-sm mt-2">
-              {alert.reason}
-            </p>
-
-            <div className="mt-3 text-sm text-cyan-400">
-              Risk Score: {alert.risk}
-            </div>
+      <div className="space-y-5">
+        {alerts.length === 0 ? (
+          <div className="text-slate-400">
+            No fraud alerts
           </div>
-        ))}
+        ) : (
+          alerts.map(
+            (txn) => (
+              <div
+                key={
+                  txn.transaction_id
+                }
+                className="bg-slate-800 border border-slate-700 rounded-3xl p-5 hover:border-cyan-500/20 transition-all"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <span
+                    className={`font-bold text-lg ${
+                      txn.decision ===
+                      'BLOCKED'
+                        ? 'text-red-400'
+                        : 'text-yellow-400'
+                    }`}
+                  >
+                    {
+                      txn.decision
+                    }
+                  </span>
+
+                  <span className="text-slate-400 text-sm">
+                    {new Date(
+                      txn.timestamp
+                    ).toLocaleTimeString()}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-2xl font-medium">
+                    {
+                      txn.user_id
+                    }
+                  </p>
+
+                  <p className="text-xl text-slate-200">
+                    $
+                    {txn.amount}
+                  </p>
+
+                  <p className="text-slate-400">
+                    {txn.reasons?.join(
+                      ', '
+                    )}
+                  </p>
+
+                  <p className="text-cyan-400 font-medium text-lg pt-2">
+                    Risk Score:{' '}
+                    {
+                      txn.risk_score
+                    }
+                  </p>
+                </div>
+              </div>
+            )
+          )
+        )}
       </div>
-    </div>
+    </section>
   )
 }
