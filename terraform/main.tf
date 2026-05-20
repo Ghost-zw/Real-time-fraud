@@ -121,6 +121,13 @@ resource "aws_apigatewayv2_route" "get_transactions_route" {
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
 
+resource "aws_apigatewayv2_route" "transaction_action" {
+  api_id =aws_apigatewayv2_api.fraud_api.id
+
+  route_key ="POST /transaction-action"
+
+  target ="integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+}
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
