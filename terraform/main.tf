@@ -122,7 +122,7 @@ resource "aws_apigatewayv2_route" "get_transactions_route" {
 }
 
 resource "aws_apigatewayv2_route" "transaction_action" {
-  api_id =aws_apigatewayv2_api.fraud_api.id
+  api_id = aws_apigatewayv2_api.api.id
 
   route_key ="POST /transaction-action"
 
