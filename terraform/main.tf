@@ -154,7 +154,8 @@ resource "aws_iam_policy" "dynamodb_policy" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem"
         ]
         Resource = [
         aws_dynamodb_table.transactions.arn,
