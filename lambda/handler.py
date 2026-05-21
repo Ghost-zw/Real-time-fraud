@@ -2,285 +2,670 @@ from decimal import Decimal
 import json
 import os
 import boto3
-from datetime import datetime, timezone, timedelta
+
+from datetime import (
+    datetime,
+    timezone,
+    timedelta
+)
+
 from boto3.dynamodb.conditions import Key
 
-def log_event(event_type, details):
+
+# ==================================
+# LOGGING
+# ==================================
+def log_event(
+    event_type,
+    details
+):
     log = {
-        "event_type": event_type,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event_type":
+        event_type,
+
+        "timestamp":
+        datetime.now(
+            timezone.utc
+        ).isoformat(),
+
         **details
     }
 
+    print(
+        json.dumps(log)
+    )
+
+
+# ==================================
+# DECIMAL SERIALIZER
+# ==================================
 def decimal_default(obj):
-    if isinstance(obj, Decimal):
+    if isinstance(
+        obj,
+        Decimal
+    ):
         return float(obj)
 
     raise TypeError
 
-    print(json.dumps(log))
 
-dynamodb = boto3.resource('dynamodb')
-sns = boto3.client('sns')
+# ==================================
+# AWS CLIENTS
+# ==================================
+dynamodb = boto3.resource(
+    "dynamodb"
+)
 
-table = dynamodb.Table(os.environ['TABLE_NAME'])
-topic_arn = os.environ['SNS_TOPIC']
+sns = boto3.client(
+    "sns"
+)
 
-def lambda_handler(event, context):
+table = dynamodb.Table(
+    os.environ[
+        "TABLE_NAME"
+    ]
+)
+
+topic_arn = os.environ[
+    "SNS_TOPIC"
+]
+
+
+# ==================================
+# MAIN HANDLER
+# ==================================
+def lambda_handler(
+    event,
+    context
+):
+
     try:
-        log_event("api_request_received", {
-            "raw_event": event
-            })
-        headers = event.get("headers") or {}
 
-        log_event("headers_received", {
-                    "headers": headers
-                })
+        log_event(
+            "api_request_received",
+            {
+                "raw_event":
+                event
+            }
+        )
+
+        # ==========================
+        # AUTH
+        # ==========================
+        headers = (
+            event.get(
+                "headers"
+            )
+            or {}
+        )
 
         incoming_api_key = (
-            headers.get("x-api-key")
-            or headers.get("X-API-Key")
+            headers.get(
+                "x-api-key"
+            )
+            or headers.get(
+                "X-API-Key"
+            )
         )
 
-        expected_api_key = os.environ.get("API_KEY")
+        expected_api_key = (
+            os.environ.get(
+                "API_KEY"
+            )
+        )
 
-        if incoming_api_key != expected_api_key:
-            log_event("authentication_failed", {
-                    "provided_api_key": incoming_api_key
-                })
+        if (
+            incoming_api_key
+            != expected_api_key
+        ):
+
+            log_event(
+                "authentication_failed",
+                {
+                    "provided_api_key":
+                    incoming_api_key
+                }
+            )
 
             return {
-                "statusCode": 401,
-                "body": json.dumps({
-                    "status": "error",
-                    "message": "Unauthorized"
+                "statusCode":
+                401,
+
+                "body":
+                json.dumps({
+                    "status":
+                    "error",
+
+                    "message":
+                    "Unauthorized"
                 })
             }
-        
-        # Get HTTP method
-                
+
+        # ==========================
+        # METHOD + PATH
+        # ==========================
         http_method = (
-            event.get("requestContext", {})
-            .get("http", {})
-            .get("method")
-            or event.get("httpMethod")
+            event.get(
+                "requestContext",
+                {}
+            )
+            .get(
+                "http",
+                {}
+            )
+            .get(
+                "method"
+            )
+            or event.get(
+                "httpMethod"
+            )
         )
 
-        log_event("http_method_detected", {
-            "method": http_method
-        })
+        path = (
+            event.get(
+                "requestContext",
+                {}
+            )
+            .get(
+                "http",
+                {}
+            )
+            .get(
+                "path"
+            )
+            or event.get(
+                "rawPath"
+            )
+            or event.get(
+                "path"
+            )
+        )
 
-        # -------------------------
+        log_event(
+            "route_detected",
+            {
+                "method":
+                http_method,
+
+                "path":
+                path
+            }
+        )
+
+        # ==================================
         # GET /transactions
-        # -------------------------
-        if http_method == "GET":
+        # ==================================
+        if (
+            http_method
+            == "GET"
+        ):
 
-            log_event("transactions_fetch_requested", {})
+            response = (
+                table.scan()
+            )
 
-            response = table.scan()
+            items = (
+                response.get(
+                    "Items",
+                    []
+                )
+            )
 
-            items = response.get("Items", [])
-
-            # newest first
             items.sort(
-                key=lambda x: x.get("timestamp", ""),
+                key=lambda x:
+                x.get(
+                    "timestamp",
+                    ""
+                ),
                 reverse=True
             )
 
-            log_event("transactions_returned", {
-                "count": len(items)
-            })
-
             return {
-                "statusCode": 200,
-                "body": json.dumps(
+                "statusCode":
+                200,
+
+                "body":
+                json.dumps(
                     {
-                        "status": "success",
-                        "count": len(items),
-                        "transactions": items
+                        "status":
+                        "success",
+
+                        "count":
+                        len(items),
+
+                        "transactions":
+                        items
                     },
-                    default=decimal_default
+
+                    default=
+                    decimal_default
                 )
             }
 
-        # ✅ Safe body extraction
-        body = event.get("body") or {}
+        # ==================================
+        # POST /transaction-action
+        # ==================================
+        if (
+    http_method == "POST"
+    and "transaction-action"
+    in str(path)
+):
 
-        if body and isinstance(body, str):
-            try:
-                body = json.loads(body)
-            except json.JSONDecodeError:
-                raise Exception("Invalid JSON in request body")
+            body = (
+                event.get(
+                    "body"
+                )
+                or {}
+            )
 
-        log_event("transaction_received", {
-            "transaction_id": body.get("transaction_id"),
-            "user_id": body.get("user_id"),
-            "amount": body.get("amount")
-        })
+            if isinstance(
+                body,
+                str
+            ):
+                body = (
+                    json.loads(
+                        body
+                    )
+                )
 
-        # ✅ Strong validation
-        transaction_id = body.get("transaction_id")
-        if not transaction_id:
-            raise Exception("transaction_id is required")
+            transaction_id = (
+                body.get(
+                    "transaction_id"
+                )
+            )
 
-        amount = body.get("amount", 0)
+            action = (
+                body.get(
+                    "action"
+                )
+            )
 
-        user_id = body.get("user_id", "unknown")
+            if not transaction_id:
+                raise Exception(
+                    "transaction_id is required"
+                )
 
-        # Query user transaction history
-        response = table.query(
-            IndexName="user_id-index",
-            KeyConditionExpression=Key("user_id").eq(user_id)
+            if not action:
+                raise Exception(
+                    "action is required"
+                )
+
+            update_expression = []
+            expression_values = {}
+
+            if (
+                action
+                == "APPROVE"
+            ):
+
+                update_expression.append(
+                    "decision = :decision"
+                )
+
+                expression_values[
+                    ":decision"
+                ] = (
+                    "MANUALLY_APPROVED"
+                )
+
+            elif (
+                action
+                == "FREEZE"
+            ):
+
+                update_expression.append(
+                    "account_status = :status"
+                )
+
+                expression_values[
+                    ":status"
+                ] = (
+                    "FROZEN"
+                )
+
+            else:
+                raise Exception(
+                    "Invalid action"
+                )
+
+            table.update_item(
+                Key={
+                    "transaction_id":
+                    transaction_id
+                },
+
+                UpdateExpression=
+                "SET "
+                + ", ".join(
+                    update_expression
+                ),
+
+                ExpressionAttributeValues=
+                expression_values
+            )
+
+            return {
+                "statusCode":
+                200,
+
+                "body":
+                json.dumps({
+                    "status":
+                    "success",
+
+                    "message":
+                    f"{action} successful"
+                })
+            }
+
+        # ==================================
+        # EXISTING FRAUD ENGINE
+        # ==================================
+        body = (
+            event.get(
+                "body"
+            )
+            or {}
         )
 
-        previous_transactions = response.get("Items", [])
-        # Current UTC time
-        now = datetime.now(timezone.utc)
+        if (
+            body
+            and isinstance(
+                body,
+                str
+            )
+        ):
+            body = (
+                json.loads(
+                    body
+                )
+            )
 
-        # Define sliding window
-        window_start = now - timedelta(seconds=60)
+        transaction_id = (
+            body.get(
+                "transaction_id"
+            )
+        )
+
+        if not transaction_id:
+            raise Exception(
+                "transaction_id is required"
+            )
+
+        user_id = (
+            body.get(
+                "user_id",
+                "unknown"
+            )
+        )
+
+        amount = (
+            body.get(
+                "amount",
+                0
+            )
+        )
+
+        # ==================================
+        # USER HISTORY
+        # ==================================
+        response = (
+            table.query(
+                IndexName=
+                "user_id-index",
+
+                KeyConditionExpression=
+                Key(
+                    "user_id"
+                ).eq(
+                    user_id
+                )
+            )
+        )
+
+        previous_transactions = (
+            response.get(
+                "Items",
+                []
+            )
+        )
+
+        now = datetime.now(
+            timezone.utc
+        )
+
+        window_start = (
+            now
+            - timedelta(
+                seconds=60
+            )
+        )
 
         recent_transactions = []
 
-        log_event("historical_transactions_loaded", {
-            "user_id": user_id,
-            "count": len(previous_transactions)
-        })
+        for txn in (
+            previous_transactions
+        ):
 
-        for txn in previous_transactions:
-
-            txn_timestamp = txn.get("timestamp")
+            txn_timestamp = (
+                txn.get(
+                    "timestamp"
+                )
+            )
 
             if txn_timestamp:
-                txn_time = datetime.fromisoformat(
-                    txn_timestamp.replace("Z", "+00:00")
+
+                txn_time = (
+                    datetime.fromisoformat(
+                        txn_timestamp.replace(
+                            "Z",
+                            "+00:00"
+                        )
+                    )
                 )
 
-                if txn_time >= window_start:
-                    recent_transactions.append(txn)
+                if (
+                    txn_time
+                    >=
+                    window_start
+                ):
+                    recent_transactions.append(
+                        txn
+                    )
 
-        log_event("velocity_check", {
-            "user_id": user_id,
-            "recent_transaction_count": len(recent_transactions)
-        })
-
-        # Calculate average historical spend
         historical_amounts = []
 
-        for txn in previous_transactions:
+        for txn in (
+            previous_transactions
+        ):
 
-            amount_value = txn.get("amount")
+            amount_value = (
+                txn.get(
+                    "amount"
+                )
+            )
 
-            if amount_value is not None:
-                historical_amounts.append(float(amount_value))
+            if (
+                amount_value
+                is not None
+            ):
+                historical_amounts.append(
+                    float(
+                        amount_value
+                    )
+                )
 
         average_spend = 0
 
-        if historical_amounts:
-            average_spend = sum(historical_amounts) / len(historical_amounts)
+        if (
+            historical_amounts
+        ):
+            average_spend = (
+                sum(
+                    historical_amounts
+                )
+                /
+                len(
+                    historical_amounts
+                )
+            )
 
-        log_event("behavioral_baseline", {
-            "user_id": user_id,
-            "average_spend": average_spend
-        })
-
-        # Fraud logic
-        
+        # ==================================
+        # FRAUD LOGIC
+        # ==================================
         risk_score = 0
         reasons = []
 
         if amount > 1000:
             risk_score += 70
-            reasons.append("High transaction amount")
 
-        # Velocity Scoring
-        if len(recent_transactions) >= 5:
+            reasons.append(
+                "High transaction amount"
+            )
+
+        if (
+            len(
+                recent_transactions
+            )
+            >= 5
+        ):
+
             risk_score += 40
-            reasons.append("Velocity threshold exceeded")
 
-        # Behavioral baseline scoring
-        if average_spend > 0:
+            reasons.append(
+                "Velocity threshold exceeded"
+            )
 
-            if amount > average_spend * 5:
-                risk_score += 50
-                reasons.append("Behavioral spending anomaly detected")
-                print("BEHAVIORAL ANOMALY DETECTED")
+        if (
+            average_spend > 0
+            and amount >
+            average_spend * 5
+        ):
 
-        
+            risk_score += 50
+
+            reasons.append(
+                "Behavioral anomaly detected"
+            )
 
         if risk_score > 60:
-            decision = "BLOCKED"
+            decision = (
+                "BLOCKED"
+            )
+
         elif risk_score > 30:
-            decision = "FLAGGED"
+            decision = (
+                "FLAGGED"
+            )
+
         else:
-            decision = "APPROVED"
-        
-        log_event("fraud_evaluated", {
-                "transaction_id": transaction_id,
-                "user_id": user_id,
-                "decision": decision,
-                "risk_score": risk_score,
-                "reasons": reasons
-            })
+            decision = (
+                "APPROVED"
+            )
 
         item = {
-            "transaction_id": transaction_id,
-            "user_id": body.get("user_id", "unknown"),
-            "amount": amount,
-            "decision": decision,
-            "risk_score": risk_score,
-            "reasons": reasons,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "transaction_id":
+            transaction_id,
+
+            "user_id":
+            user_id,
+
+            "amount":
+            amount,
+
+            "decision":
+            decision,
+
+            "risk_score":
+            risk_score,
+
+            "reasons":
+            reasons,
+
+            "timestamp":
+            datetime.now(
+                timezone.utc
+            ).isoformat()
         }
 
-        log_event("transaction_saved", {
-            "transaction_id": transaction_id,
-            "decision": decision
-        })
+        table.put_item(
+            Item=item
+        )
 
-        table.put_item(Item=item)
+        # ==================================
+        # SNS ALERTS
+        # ==================================
+        if decision in [
+            "FLAGGED",
+            "BLOCKED"
+        ]:
 
-#  Send alert for suspicious/fraud transactions
-
-        if decision in ["FLAGGED", "BLOCKED"]:
-
-            log_event("fraud_alert_sent", {
-                "transaction_id": transaction_id,
-                "decision": decision
-            })
-                        
             sns.publish(
-                TopicArn=topic_arn,
-                Subject="Fraud Alert",
-                Message=json.dumps({
-                    "transaction_id": transaction_id,
-                    "user_id": body.get("user_id"),
-                    "amount": amount,
-                    "decision": decision,
-                    "risk_score": risk_score,
-                    "reasons": reasons
+                TopicArn=
+                topic_arn,
+
+                Subject=
+                "Fraud Alert",
+
+                Message=
+                json.dumps({
+                    "transaction_id":
+                    transaction_id,
+
+                    "user_id":
+                    user_id,
+
+                    "amount":
+                    amount,
+
+                    "decision":
+                    decision,
+
+                    "risk_score":
+                    risk_score,
+
+                    "reasons":
+                    reasons
                 })
             )
 
-
         return {
-            "statusCode": 200,
-            "body": json.dumps({
-                "status": "success",
-                "message": "Transaction processed successfully",
-                "data": item
-    })
-}
+            "statusCode":
+            200,
 
-    except Exception as e:
-        log_event("error_occurred", {
-                "error": str(e)
-            })
-        return {
-            "statusCode": 500,
-            "body": json.dumps({
-                "status": "error",
-                "message": str(e)
+            "body":
+            json.dumps({
+                "status":
+                "success",
+
+                "message":
+                "Transaction processed successfully",
+
+                "data":
+                item
             })
         }
-    
+
+    except Exception as e:
+
+        log_event(
+            "error_occurred",
+            {
+                "error":
+                str(e)
+            }
+        )
+
+        return {
+            "statusCode":
+            500,
+
+            "body":
+            json.dumps({
+                "status":
+                "error",
+
+                "message":
+                str(e)
+            })
+        }
