@@ -127,6 +127,10 @@ export default function TransactionTable({
                               Decision
                           </th>
 
+                          <th className="w-[150px]">
+                              Status
+                          </th>
+
                           <th className="w-[260px]">
                               Reasons
                           </th>
@@ -176,6 +180,19 @@ export default function TransactionTable({
                                           {txn.decision}
                                       </span>
                                   </td>
+
+                            <td>
+                              {txn.account_status ===
+                                'FROZEN' ? (
+                                <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
+                                  FROZEN
+                                </span>
+                              ) : (
+                                <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                                  ACTIVE
+                                </span>
+                              )}
+                            </td>
 
                                   <td className="text-slate-300">
                                       {txn.reasons?.join(', ')}

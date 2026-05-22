@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
 
-import { API_KEY, API_URL } from '../config'
+import { API_KEY, API_BASE, API_URL } from '../config'
 
 type Transaction = {
   transaction_id: string

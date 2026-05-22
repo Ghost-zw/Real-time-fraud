@@ -6,6 +6,7 @@ type Transaction = {
   decision: string
   risk_score: number
   user_id: string
+  account_status?: string
 }
 
 export default function useFraudMetrics(
@@ -13,11 +14,13 @@ export default function useFraudMetrics(
 ) {
   return useMemo(() => {
     const approved =
-      transactions.filter(
-        (t) =>
-          t.decision ===
-          'APPROVED'
-      ).length
+  transactions.filter(
+    (txn) =>
+      txn.decision ===
+        'APPROVED' ||
+      txn.decision ===
+        'MANUALLY_APPROVED'
+  ).length
 
     const flagged =
       transactions.filter(
@@ -56,12 +59,20 @@ export default function useFraudMetrics(
           )
       ).size
 
+    const frozenAccounts =
+      transactions.filter(
+        (txn) =>
+          txn.account_status ===
+          'FROZEN'
+      ).length
+
     return {
       approved,
       flagged,
       blocked,
       fraudRate,
       highRiskUsers,
+      frozenAccounts,
     }
   }, [transactions])
 }

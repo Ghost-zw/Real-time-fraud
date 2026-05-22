@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
-import { API_KEY, API_URL } from '../config'
+import { API_KEY, API_BASE, API_URL } from '../config'
 
 type Transaction = {
   transaction_id: string
@@ -13,6 +13,7 @@ type Transaction = {
   decision: string
   reasons: string[]
   timestamp: string
+  account_status?: string
 }
 
 export default function TransactionsPage() {
@@ -59,7 +60,65 @@ const [riskFilter, setRiskFilter] =
       setLoading(false)
     }
   }
+async function handleAction(
+  transactionId: string,
+  action: string
+) {
+  try {
+    const response =
+      await fetch(
+        `${API_BASE}/transaction-action`,
+        {
+          method: 'POST',
 
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            'x-api-key':
+              API_KEY,
+          },
+
+          body: JSON.stringify({
+            transaction_id:
+              transactionId,
+
+            action,
+          }),
+        }
+      )
+
+    const data =
+      await response.json()
+
+    console.log(data)
+
+    // refresh transactions
+    await fetchTransactions()
+
+    // update selected txn
+    setTimeout(() => {
+      const refreshed =
+        transactions.find(
+          (txn) =>
+            txn.transaction_id ===
+            transactionId
+        )
+
+      if (refreshed) {
+        setSelectedTxn(
+          refreshed
+        )
+      }
+    }, 500)
+
+  } catch (error) {
+    console.error(
+      'Action failed',
+      error
+    )
+  }
+}
   useEffect(() => {
     fetchTransactions()
 
@@ -352,6 +411,7 @@ const [riskFilter, setRiskFilter] =
                     Severity
                   </p>
 
+
                   <p
                     className={`font-semibold ${selectedTxn.risk_score >=
                         70
@@ -371,6 +431,24 @@ const [riskFilter, setRiskFilter] =
                         : 'LOW'}
                   </p>
                 </div>
+
+                <div>
+                  <p className="text-slate-400 text-sm">
+                    Account Status
+                  </p>
+
+                  <p
+                    className={`font-semibold ${selectedTxn.account_status ===
+                        'FROZEN'
+                        ? 'text-red-400'
+                        : 'text-green-400'
+                      }`}
+                  >
+                    {selectedTxn.account_status ||
+                      'ACTIVE'}
+                  </p>
+                </div>
+
                 <div>
                   <p className="text-slate-400 text-sm">
                     Reasons
@@ -384,12 +462,49 @@ const [riskFilter, setRiskFilter] =
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-4">
-                  <button className="bg-green-500/20 text-green-400 rounded-xl py-3">
+                  <button
+                    onClick={() =>
+                      handleAction(
+                        selectedTxn.transaction_id,
+                        'APPROVE'
+                      )
+                    }
+                    className="
+    bg-green-600
+    hover:bg-green-700
+    px-4
+    py-2
+    rounded-xl
+    font-medium
+  "
+                  >
                     Approve
                   </button>
 
-                  <button className="bg-red-500/20 text-red-400 rounded-xl py-3">
-                    Freeze Account
+                  <button
+                    onClick={() =>
+                      selectedTxn &&
+                      handleAction(
+                        selectedTxn.transaction_id,
+                        selectedTxn.account_status ===
+                          'FROZEN'
+                          ? 'UNFREEZE'
+                          : 'FREEZE'
+                      )
+                    }
+                    className={`
+    px-4 py-2 rounded-xl font-medium
+    ${selectedTxn?.account_status ===
+                        'FROZEN'
+                        ? 'bg-cyan-600 hover:bg-cyan-700'
+                        : 'bg-red-600 hover:bg-red-700'
+                      }
+  `}
+                  >
+                    {selectedTxn?.account_status ===
+                      'FROZEN'
+                      ? 'Unfreeze'
+                      : 'Freeze'}
                   </button>
                 </div>
               </div>

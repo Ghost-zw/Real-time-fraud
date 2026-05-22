@@ -29,7 +29,9 @@ export default function FraudCharts({
     transactions.filter(
       (t) =>
         t.decision ===
-        'APPROVED'
+        'APPROVED' ||
+        t.decision ===
+        'MANUALLY_APPROVED'
     ).length
 
   const flagged =

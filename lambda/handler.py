@@ -294,39 +294,57 @@ def lambda_handler(
             expression_values = {}
 
             if (
-                action
-                == "APPROVE"
-            ):
+            action
+            == "APPROVE"
+        ):
 
                 update_expression.append(
                     "decision = :decision"
                 )
 
-                expression_values[
-                    ":decision"
-                ] = (
-                    "MANUALLY_APPROVED"
-                )
+            expression_values[
+                ":decision"
+            ] = (
+                "MANUALLY_APPROVED"
+            )
 
-            elif (
-                action
-                == "FREEZE"
-            ):
 
-                update_expression.append(
-                    "account_status = :status"
-                )
+        elif (
+            action
+            == "FREEZE"
+        ):
 
-                expression_values[
-                    ":status"
-                ] = (
-                    "FROZEN"
-                )
+            update_expression.append(
+                "account_status = :status"
+            )
 
-            else:
-                raise Exception(
-                    "Invalid action"
-                )
+            expression_values[
+                ":status"
+            ] = (
+                "FROZEN"
+            )
+
+
+        elif (
+            action
+            == "UNFREEZE"
+        ):
+
+            update_expression.append(
+                "account_status = :status"
+            )
+
+            expression_values[
+                ":status"
+            ] = (
+                "ACTIVE"
+            )
+
+
+        else:
+            raise Exception(
+                "Invalid action"
+            )
 
             table.update_item(
                 Key={

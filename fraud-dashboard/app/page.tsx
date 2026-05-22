@@ -11,7 +11,7 @@ import AlertPanel from './components/Alerts'
 import StatusBar from './components/StatusBar'
 
 import useFraudMetrics from './hooks/useFraudMetrics'
-import { API_KEY, API_URL } from './config'
+import { API_KEY, API_BASE, API_URL } from './config'
 
 type Transaction = {
   transaction_id: string
@@ -104,9 +104,9 @@ export default function Home() {
           />
 
           <MetricCard
-            title="High Risk Users"
+            title="Frozen Accounts"
             value={String(
-              metrics.highRiskUsers
+              metrics.frozenAccounts
             )}
           />
         </section>

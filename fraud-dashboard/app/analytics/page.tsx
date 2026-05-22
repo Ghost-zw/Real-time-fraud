@@ -24,6 +24,7 @@ import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
 import {
   API_KEY,
+  API_BASE,
   API_URL,
 } from '../config'
 
@@ -79,7 +80,9 @@ export default function AnalyticsPage() {
     transactions.filter(
       (t) =>
         t.decision ===
-        'APPROVED'
+        'APPROVED' ||
+        t.decision ===
+        'MANUALLY_APPROVED'
     ).length
 
   const flagged =
