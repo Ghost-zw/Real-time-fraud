@@ -46,7 +46,10 @@ def decimal_default(obj):
     ):
         return float(obj)
 
-    raise TypeError
+    raise TypeError(
+        f"Object of type {type(obj)} "
+        "is not JSON serializable"
+    )
 
 
 # ==================================
@@ -246,10 +249,11 @@ def lambda_handler(
         # POST /transaction-action
         # ==================================
         if (
-    http_method == "POST"
-    and "transaction-action"
-    in str(path)
-):
+            http_method
+            == "POST"
+            and "transaction-action"
+            in str(path)
+        ):
 
             body = (
                 event.get(
@@ -262,10 +266,8 @@ def lambda_handler(
                 body,
                 str
             ):
-                body = (
-                    json.loads(
-                        body
-                    )
+                body = json.loads(
+                    body
                 )
 
             transaction_id = (
@@ -293,60 +295,53 @@ def lambda_handler(
             update_expression = []
             expression_values = {}
 
-            if (
-            action
-            == "APPROVE"
-        ):
+            # ==========================
+            # ACTION LOGIC
+            # ==========================
+            if action == "APPROVE":
 
                 update_expression.append(
                     "decision = :decision"
                 )
 
-            expression_values[
-                ":decision"
-            ] = (
-                "MANUALLY_APPROVED"
-            )
+                expression_values[
+                    ":decision"
+                ] = (
+                    "MANUALLY_APPROVED"
+                )
 
+            elif action == "FREEZE":
 
-        elif (
-            action
-            == "FREEZE"
-        ):
+                update_expression.append(
+                    "account_status = :status"
+                )
 
-            update_expression.append(
-                "account_status = :status"
-            )
+                expression_values[
+                    ":status"
+                ] = (
+                    "FROZEN"
+                )
 
-            expression_values[
-                ":status"
-            ] = (
-                "FROZEN"
-            )
+            elif action == "UNFREEZE":
 
+                update_expression.append(
+                    "account_status = :status"
+                )
 
-        elif (
-            action
-            == "UNFREEZE"
-        ):
+                expression_values[
+                    ":status"
+                ] = (
+                    "ACTIVE"
+                )
 
-            update_expression.append(
-                "account_status = :status"
-            )
+            else:
+                raise Exception(
+                    "Invalid action"
+                )
 
-            expression_values[
-                ":status"
-            ] = (
-                "ACTIVE"
-            )
-
-
-        else:
-            raise Exception(
-                "Invalid action"
-            )
-
-            # audit metadata
+            # ==========================
+            # AUDIT TRAIL
+            # ==========================
             update_expression.extend([
                 "review_status = :review_status",
                 "reviewed_by = :reviewed_by",
@@ -374,21 +369,28 @@ def lambda_handler(
                 ":action"
             ] = action
 
+            # ==========================
+            # UPDATE DYNAMODB
+            # ==========================
+            response = (
+                table.update_item(
+                    Key={
+                        "transaction_id":
+                        transaction_id
+                    },
 
-            table.update_item(
-                Key={
-                    "transaction_id":
-                    transaction_id
-                },
+                    UpdateExpression=
+                    "SET "
+                    + ", ".join(
+                        update_expression
+                    ),
 
-                UpdateExpression=
-                "SET "
-                + ", ".join(
-                    update_expression
-                ),
+                    ExpressionAttributeValues=
+                    expression_values,
 
-                ExpressionAttributeValues=
-                expression_values
+                    ReturnValues=
+                    "ALL_NEW"
+                )
             )
 
             return {
@@ -396,13 +398,23 @@ def lambda_handler(
                 200,
 
                 "body":
-                json.dumps({
-                    "status":
-                    "success",
+                json.dumps(
+                    {
+                        "status":
+                        "success",
 
-                    "message":
-                    f"{action} successful"
-                })
+                        "message":
+                        f"{action} successful",
+
+                        "updated_item":
+                        response.get(
+                            "Attributes",
+                            {}
+                        )
+                    },
+                    default=
+                    decimal_default
+                )
             }
 
         # ==================================
@@ -422,10 +434,8 @@ def lambda_handler(
                 str
             )
         ):
-            body = (
-                json.loads(
-                    body
-                )
+            body = json.loads(
+                body
             )
 
         transaction_id = (
@@ -453,9 +463,9 @@ def lambda_handler(
             )
         )
 
-        # ==================================
+        # ==========================
         # USER HISTORY
-        # ==================================
+        # ==========================
         response = (
             table.query(
                 IndexName=
@@ -557,15 +567,14 @@ def lambda_handler(
                 )
             )
 
-        # ==================================
+        # ==========================
         # FRAUD LOGIC
-        # ==================================
+        # ==========================
         risk_score = 0
         reasons = []
 
         if amount > 1000:
             risk_score += 70
-
             reasons.append(
                 "High transaction amount"
             )
@@ -576,9 +585,7 @@ def lambda_handler(
             )
             >= 5
         ):
-
             risk_score += 40
-
             reasons.append(
                 "Velocity threshold exceeded"
             )
@@ -588,27 +595,19 @@ def lambda_handler(
             and amount >
             average_spend * 5
         ):
-
             risk_score += 50
-
             reasons.append(
                 "Behavioral anomaly detected"
             )
 
         if risk_score > 60:
-            decision = (
-                "BLOCKED"
-            )
+            decision = "BLOCKED"
 
         elif risk_score > 30:
-            decision = (
-                "FLAGGED"
-            )
+            decision = "FLAGGED"
 
         else:
-            decision = (
-                "APPROVED"
-            )
+            decision = "APPROVED"
 
         item = {
             "transaction_id":
@@ -639,9 +638,9 @@ def lambda_handler(
             Item=item
         )
 
-        # ==================================
+        # ==========================
         # SNS ALERTS
-        # ==================================
+        # ==========================
         if decision in [
             "FLAGGED",
             "BLOCKED"
