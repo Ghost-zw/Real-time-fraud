@@ -14,6 +14,10 @@ type Transaction = {
   reasons: string[]
   timestamp: string
   account_status?: string
+  review_status?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  action_taken?: string
 }
 
 export default function TransactionsPage() {
@@ -446,6 +450,39 @@ async function handleAction(
                   >
                     {selectedTxn.account_status ||
                       'ACTIVE'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-slate-400 text-sm">
+                    Review Status
+                  </p>
+
+                  <p className="font-medium text-cyan-400">
+                    {selectedTxn.review_status ||
+                      'PENDING'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-slate-400 text-sm">
+                    Reviewed By
+                  </p>
+
+                  <p>
+                    {selectedTxn.reviewed_by ||
+                      'Not reviewed'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-slate-400 text-sm">
+                    Last Action
+                  </p>
+
+                  <p className="text-yellow-400">
+                    {selectedTxn.action_taken ||
+                      'None'}
                   </p>
                 </div>
 

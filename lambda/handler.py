@@ -346,6 +346,35 @@ def lambda_handler(
                 "Invalid action"
             )
 
+            # audit metadata
+            update_expression.extend([
+                "review_status = :review_status",
+                "reviewed_by = :reviewed_by",
+                "reviewed_at = :reviewed_at",
+                "action_taken = :action"
+            ])
+
+            expression_values[
+                ":review_status"
+            ] = "RESOLVED"
+
+            expression_values[
+                ":reviewed_by"
+            ] = "fraud_analyst"
+
+            expression_values[
+                ":reviewed_at"
+            ] = (
+                datetime.now(
+                    timezone.utc
+                ).isoformat()
+            )
+
+            expression_values[
+                ":action"
+            ] = action
+
+
             table.update_item(
                 Key={
                     "transaction_id":
