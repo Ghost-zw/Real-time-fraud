@@ -89,13 +89,24 @@ export default function Home() {
           />
 
           <MetricCard
-            title="Flagged"
-            value={String(metrics.flagged)}
+            title="Verification"
+            value={String(
+              metrics.verificationRequired
+            )}
           />
 
           <MetricCard
-            title="Blocked"
-            value={String(metrics.blocked)}
+            title="Under Review"
+            value={String(
+              metrics.underReview
+            )}
+          />
+
+          <MetricCard
+            title="Declined"
+            value={String(
+              metrics.declined
+            )}
           />
 
           <MetricCard

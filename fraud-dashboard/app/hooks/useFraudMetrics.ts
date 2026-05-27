@@ -10,69 +10,65 @@ type Transaction = {
 }
 
 export default function useFraudMetrics(
-  transactions: Transaction[]
+  transactions: any[]
 ) {
-  return useMemo(() => {
-    const approved =
-  transactions.filter(
-    (txn) =>
-      txn.decision ===
-        'APPROVED' ||
-      txn.decision ===
-        'MANUALLY_APPROVED'
-  ).length
 
-    const flagged =
-      transactions.filter(
-        (t) =>
-          t.decision ===
-          'FLAGGED'
-      ).length
+  const approved =
+    transactions.filter(
+      t =>
+        t.decision ===
+          'APPROVED'
+        ||
+        t.decision ===
+          'MANUALLY_APPROVED'
+    ).length
 
-    const blocked =
-      transactions.filter(
-        (t) =>
-          t.decision ===
-          'BLOCKED'
-      ).length
+  const verificationRequired =
+    transactions.filter(
+      t =>
+        t.decision ===
+        'VERIFICATION_REQUIRED'
+    ).length
 
-    const fraudRate =
-      transactions.length > 0
-        ? (
-            ((flagged +
-              blocked) /
-              transactions.length) *
-            100
-          ).toFixed(1)
-        : '0'
+  const underReview =
+    transactions.filter(
+      t =>
+        t.decision ===
+        'UNDER_REVIEW'
+    ).length
 
-    const highRiskUsers =
-      new Set(
-        transactions
-          .filter(
-            (t) =>
-              t.risk_score >=
-              70
-          )
-          .map(
-            (t) => t.user_id
-          )
-      ).size
+  const declined =
+    transactions.filter(
+      t =>
+        t.decision ===
+        'DECLINED'
+    ).length
 
-    const frozenAccounts =
-      transactions.filter(
-        (txn) =>
-          txn.account_status ===
-          'FROZEN'
-      ).length
+  const frozenAccounts =
+    transactions.filter(
+      t =>
+        t.account_status ===
+        'FROZEN'
+    ).length
 
-    return {
-      approved,
-      flagged,
-      blocked,
-      fraudRate,
-      highRiskUsers,
-      frozenAccounts,
-    }
-  }, [transactions])
+  const fraudRate =
+    transactions.length
+      ? (
+          (
+            underReview +
+            declined
+          ) /
+          transactions.length
+        ) * 100
+      : 0
+
+  return {
+    approved,
+    verificationRequired,
+    underReview,
+    declined,
+    frozenAccounts,
+    fraudRate:
+      fraudRate.toFixed(1),
+  }
 }
