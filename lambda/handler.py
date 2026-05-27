@@ -600,14 +600,32 @@ def lambda_handler(
                 "Behavioral anomaly detected"
             )
 
-        if risk_score > 60:
-            decision = "BLOCKED"
+        # ==========================
+        # DECISION ENGINE
+        # ==========================
+        if risk_score <= 30:
 
-        elif risk_score > 30:
-            decision = "FLAGGED"
+            decision = (
+                "APPROVED"
+            )
+
+        elif risk_score <= 70:
+
+            decision = (
+                "VERIFICATION_REQUIRED"
+            )
+
+        elif risk_score <= 85:
+
+            decision = (
+                "UNDER_REVIEW"
+            )
 
         else:
-            decision = "APPROVED"
+
+            decision = (
+                "DECLINED"
+            )
 
         item = {
             "transaction_id":
