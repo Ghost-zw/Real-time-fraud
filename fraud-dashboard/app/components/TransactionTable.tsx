@@ -142,12 +142,12 @@ export default function TransactionTable({
                               Risk Score
                           </th>
 
-                          <th className="w-[150px]">
-                              Decision
+                          <th className="w-[240px]">
+                            Decision
                           </th>
 
-                          <th className="w-[150px]">
-                              Status
+                          <th className="w-[160px]">
+                            Status
                           </th>
 
                           <th className="w-[260px]">
@@ -165,7 +165,7 @@ export default function TransactionTable({
                           (txn) => (
                               <tr
                                   key={txn.transaction_id}
-                                  className="border-t border-slate-800 hover:bg-slate-800/40 transition-all"
+                                  className="border-t border-slate-800 hover:bg-slate-800/40 transition-all h-[78px]"
                               >
                                   <td className="p-4 font-medium truncate">
                                       {txn.transaction_id}
@@ -187,7 +187,7 @@ export default function TransactionTable({
 
                                   <td>
                               <span
-                                className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${decisionStyles[
+                                className={`inline-flex items-center justify-center min-w-[170px] px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap ${decisionStyles[
                                   txn.decision as keyof typeof decisionStyles
                                   ] ||
                                   'bg-slate-500/20 text-slate-400'
@@ -203,19 +203,21 @@ export default function TransactionTable({
                             <td>
                               {txn.account_status ===
                                 'FROZEN' ? (
-                                <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
+                                <span className="inline-flex items-center justify-center min-w-[100px] bg-red-500/20 text-red-400 px-4 py-1.5 rounded-full text-xs font-semibold">
                                   FROZEN
                                 </span>
                               ) : (
-                                <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                                <span className="inline-flex items-center justify-center min-w-[100px] bg-green-500/20 text-green-400 px-4 py-1.5 rounded-full text-xs font-semibold">
                                   ACTIVE
                                 </span>
                               )}
                             </td>
 
-                                  <td className="text-slate-300">
-                                      {txn.reasons?.join(', ')}
-                                  </td>
+                            <td className="text-slate-300 max-w-[260px]">
+                              <p className="truncate">
+                                {txn.reasons?.join(', ')}
+                              </p>
+                            </td>
 
                                   <td className="text-slate-400 text-sm whitespace-nowrap">
                                       {new Date(
