@@ -568,37 +568,66 @@ def lambda_handler(
             )
 
         # ==========================
-        # FRAUD LOGIC
+        # RISK SCORING ENGINE
         # ==========================
         risk_score = 0
         reasons = []
 
-        if amount > 1000:
+        # --------------------------
+        # Transaction amount
+        # --------------------------
+        if amount > 10000:
+
+            risk_score += 90
+            reasons.append(
+                "Extremely high amount"
+            )
+
+        elif amount > 5000:
+
             risk_score += 70
+            reasons.append(
+                "Very high amount"
+            )
+
+        elif amount > 1000:
+
+            risk_score += 40
             reasons.append(
                 "High transaction amount"
             )
 
-        if (
-            len(
-                recent_transactions
-            )
-            >= 5
-        ):
-            risk_score += 40
+        # --------------------------
+        # Velocity attack
+        # --------------------------
+        if len(recent_transactions) >= 5:
+
+            risk_score += 35
+
             reasons.append(
                 "Velocity threshold exceeded"
             )
 
+        # --------------------------
+        # Behavioral anomaly
+        # --------------------------
         if (
             average_spend > 0
             and amount >
             average_spend * 5
         ):
-            risk_score += 50
+
+            risk_score += 30
+
             reasons.append(
-                "Behavioral anomaly detected"
+                "Behavior anomaly"
             )
+
+        # cap score
+        risk_score = min(
+            risk_score,
+            100
+        )
 
         # ==========================
         # DECISION ENGINE
@@ -660,8 +689,8 @@ def lambda_handler(
         # SNS ALERTS
         # ==========================
         if decision in [
-            "FLAGGED",
-            "BLOCKED"
+            "UNDER_REVIEW",
+            "DECLINED"
         ]:
 
             sns.publish(

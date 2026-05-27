@@ -12,6 +12,7 @@ type Transaction = {
   decision: string
   reasons: string[]
   timestamp: string
+  account_status?: string
 }
 
 type Props = {
@@ -34,6 +35,23 @@ export default function TransactionTable({
 
   const [risk, setRisk] =
     useState('ALL')
+
+    const decisionStyles = {
+        APPROVED:
+          'bg-green-500/20 text-green-400',
+
+        VERIFICATION_REQUIRED:
+          'bg-yellow-500/20 text-yellow-400',
+
+        UNDER_REVIEW:
+          'bg-orange-500/20 text-orange-400',
+
+        DECLINED:
+          'bg-red-500/20 text-red-400',
+
+        MANUALLY_APPROVED:
+          'bg-cyan-500/20 text-cyan-400'
+      }
 
     
    
@@ -67,6 +85,7 @@ export default function TransactionTable({
         (risk === 'LOW' &&
           txn.risk_score < 40)
 
+      
       return (
         matchesSearch &&
         matchesDecision &&
@@ -167,18 +186,18 @@ export default function TransactionTable({
                                   </td>
 
                                   <td>
-                                      <span
-                                          className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${txn.decision ===
-                                                  'BLOCKED'
-                                                  ? 'bg-red-500/20 text-red-400'
-                                                  : txn.decision ===
-                                                      'FLAGGED'
-                                                      ? 'bg-yellow-500/20 text-yellow-400'
-                                                      : 'bg-green-500/20 text-green-400'
-                                              }`}
-                                      >
-                                          {txn.decision}
-                                      </span>
+                              <span
+                                className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${decisionStyles[
+                                  txn.decision as keyof typeof decisionStyles
+                                  ] ||
+                                  'bg-slate-500/20 text-slate-400'
+                                  }`}
+                              >
+                                {txn.decision.replaceAll(
+                                  '_',
+                                  ' '
+                                )}
+                              </span>
                                   </td>
 
                             <td>
