@@ -52,9 +52,13 @@ export default function AlertsPage() {
             txn: Transaction
           ) =>
             txn.decision ===
-              'BLOCKED' ||
+            'UNDER_REVIEW' ||
+
             txn.decision ===
-              'FLAGGED'
+            'DECLINED' ||
+
+            txn.decision ===
+            'VERIFICATION_REQUIRED'
         )
 
       setTransactions(alerts)
@@ -136,12 +140,16 @@ export default function AlertsPage() {
                   All Alerts
                 </option>
 
-                <option value="BLOCKED">
-                  Blocked
+                <option value="UNDER_REVIEW">
+                  Under Review
                 </option>
 
-                <option value="FLAGGED">
-                  Flagged
+                <option value="DECLINED">
+                  Declined
+                </option>
+
+                <option value="VERIFICATION_REQUIRED">
+                  Verification Required
                 </option>
               </select>
             </div>
@@ -162,16 +170,21 @@ export default function AlertsPage() {
                   >
                     <div className="flex justify-between items-center mb-3">
                       <span
-                        className={`font-bold text-lg ${
-                          txn.decision ===
-                          'BLOCKED'
+                        className={`font-bold text-lg ${txn.decision ===
+                            'DECLINED'
                             ? 'text-red-400'
-                            : 'text-yellow-400'
-                        }`}
+
+                            : txn.decision ===
+                              'UNDER_REVIEW'
+                              ? 'text-orange-400'
+
+                              : 'text-yellow-400'
+                          }`}
                       >
-                        {
-                          txn.decision
-                        }
+                        {txn.decision.replaceAll(
+                          '_',
+                          ' '
+                        )}
                       </span>
 
                       <span className="text-slate-400 text-sm">
@@ -244,16 +257,22 @@ export default function AlertsPage() {
                   </p>
 
                   <p
-                    className={`font-semibold ${
-                      selectedAlert.decision ===
-                      'BLOCKED'
+                    className={`font-semibold ${selectedAlert.decision ===
+                        'DECLINED'
                         ? 'text-red-400'
-                        : 'text-yellow-400'
-                    }`}
+
+                        : selectedAlert.decision ===
+                          'UNDER_REVIEW'
+                          ? 'text-orange-400'
+
+                          : 'text-yellow-400'
+                      }`}
                   >
-                    {
-                      selectedAlert.decision
-                    }
+                    {selectedAlert.decision
+                      .replaceAll(
+                        '_',
+                        ' '
+                      )}
                   </p>
                 </div>
 
