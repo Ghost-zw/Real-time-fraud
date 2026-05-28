@@ -275,7 +275,58 @@ def lambda_handler(
                     "transaction_id"
                 )
             )
+            # ==========================
+            # IDEMPOTENCY CHECK
+            # ==========================
+            existing_transaction = (
+                table.get_item(
+                    Key={
+                        "transaction_id":
+                        transaction_id
+                    }
+                )
+            )
 
+            if (
+                "Item"
+                in existing_transaction
+            ):
+
+                log_event(
+                    "duplicate_transaction",
+                    {
+                        "transaction_id":
+                        transaction_id
+                    }
+                )
+
+                return {
+                    "statusCode":
+                    200,
+
+                    "body":
+                    json.dumps(
+                        {
+                            "status":
+                            "duplicate",
+
+                            "message":
+                            (
+                                "Transaction "
+                                "already "
+                                "processed"
+                            ),
+
+                            "data":
+                            existing_transaction[
+                                "Item"
+                            ]
+                        },
+
+                        default=
+                        decimal_default
+                    )
+                }
             action = (
                 body.get(
                     "action"
