@@ -128,10 +128,18 @@ resource "aws_apigatewayv2_route" "transaction_action" {
 
   target ="integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
   auto_deploy = true
+
+  default_route_settings {
+
+    throttling_rate_limit = 100
+
+    throttling_burst_limit = 200
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {
