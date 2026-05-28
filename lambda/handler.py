@@ -333,6 +333,18 @@ def lambda_handler(
                 ] = (
                     "ACTIVE"
                 )
+            
+            elif action == "DECLINE":
+
+                update_expression.append(
+                    "decision = :decision"
+                )
+
+                expression_values[
+                    ":decision"
+                ] = (
+                    "DECLINED_AFTER_REVIEW"
+                )
 
             else:
                 raise Exception(

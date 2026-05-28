@@ -28,6 +28,53 @@ export default function AlertsPage() {
 
   const [filter, setFilter] =
     useState('ALL')
+  
+  async function handleAction(
+  transactionId: string,
+  action: string
+) {
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE}/transaction-action`,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+
+            'x-api-key':
+              API_KEY,
+          },
+
+          body: JSON.stringify({
+            transaction_id:
+              transactionId,
+
+            action,
+          }),
+        }
+      )
+
+    const data =
+      await response.json()
+
+    console.log(data)
+
+    await fetchAlerts()
+
+    setSelectedAlert(null)
+
+  } catch (error) {
+
+    console.error(
+      'Action failed',
+      error
+    )
+  }
+}
 
   async function fetchAlerts() {
     try {
@@ -39,6 +86,7 @@ export default function AlertsPage() {
           },
         }
       )
+    
 
       const data =
         await response.json()
@@ -227,15 +275,14 @@ export default function AlertsPage() {
 
             {selectedAlert ? (
               <div className="space-y-5">
+
                 <div>
                   <p className="text-slate-400 text-sm">
                     Transaction ID
                   </p>
 
                   <p>
-                    {
-                      selectedAlert.transaction_id
-                    }
+                    {selectedAlert.transaction_id}
                   </p>
                 </div>
 
@@ -245,9 +292,7 @@ export default function AlertsPage() {
                   </p>
 
                   <p>
-                    {
-                      selectedAlert.user_id
-                    }
+                    {selectedAlert.user_id}
                   </p>
                 </div>
 
@@ -268,11 +313,10 @@ export default function AlertsPage() {
                           : 'text-yellow-400'
                       }`}
                   >
-                    {selectedAlert.decision
-                      .replaceAll(
-                        '_',
-                        ' '
-                      )}
+                    {selectedAlert.decision.replaceAll(
+                      '_',
+                      ' '
+                    )}
                   </p>
                 </div>
 
@@ -290,21 +334,62 @@ export default function AlertsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-4">
-                  <button className="bg-cyan-500/20 text-cyan-400 rounded-xl py-3">
-                    Investigate
-                  </button>
 
-                  <button className="bg-green-500/20 text-green-400 rounded-xl py-3">
-                    Resolve
-                  </button>
+                  {selectedAlert.decision ===
+                    'UNDER_REVIEW' && (
+                      <>
+                        <button
+                          onClick={() =>
+                            handleAction(
+                              selectedAlert.transaction_id,
+                              'APPROVE'
+                            )
+                          }
+                          className="bg-green-500/20 text-green-400 rounded-xl py-3 hover:bg-green-500/30 transition"
+                        >
+                          Approve
+                        </button>
 
-                  <button className="bg-yellow-500/20 text-yellow-400 rounded-xl py-3">
-                    Escalate
-                  </button>
+                        <button
+                          onClick={() =>
+                            handleAction(
+                              selectedAlert.transaction_id,
+                              'DECLINE'
+                            )
+                          }
+                          className="bg-yellow-500/20 text-yellow-400 rounded-xl py-3 hover:bg-yellow-500/30 transition"
+                        >
+                          Decline
+                        </button>
 
-                  <button className="bg-red-500/20 text-red-400 rounded-xl py-3">
-                    Dismiss
-                  </button>
+                        <button
+                          onClick={() =>
+                            handleAction(
+                              selectedAlert.transaction_id,
+                              'FREEZE'
+                            )
+                          }
+                          className="bg-red-500/20 text-red-400 rounded-xl py-3 hover:bg-red-500/30 transition"
+                        >
+                          Freeze
+                        </button>
+                      </>
+                    )}
+
+                  {selectedAlert.decision ===
+                    'VERIFICATION_REQUIRED' && (
+                      <div className="col-span-2 bg-slate-800 rounded-2xl p-4 text-center text-slate-400">
+                        Awaiting customer verification
+                      </div>
+                    )}
+
+                  {selectedAlert.decision ===
+                    'DECLINED' && (
+                      <div className="col-span-2 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center text-red-400">
+                        Automatically declined by fraud engine
+                      </div>
+                    )}
+
                 </div>
               </div>
             ) : (
