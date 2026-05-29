@@ -718,6 +718,31 @@ def lambda_handler(
         reasons
     )
 
+        return {
+            "statusCode":
+            200,
+
+            "body":
+            json.dumps(
+                {
+                    "status":
+                    "success",
+
+                    "message":
+                    (
+                        "Transaction "
+                        "processed "
+                        "successfully"
+                    ),
+
+                    "data":
+                    item
+                },
+
+                default=
+                decimal_default
+            )
+        }
     except Exception as e:
 
         log_event(
