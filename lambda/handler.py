@@ -10,6 +10,10 @@ from decision_engine import (
     determine_decision
 )
 
+from notification_service import (
+    send_fraud_alert
+)
+
 from datetime import (
     datetime,
     timezone,
@@ -705,56 +709,14 @@ def lambda_handler(
         # ==========================
         # SNS ALERTS
         # ==========================
-        if decision in [
-            "UNDER_REVIEW",
-            "DECLINED"
-        ]:
-
-            sns.publish(
-                TopicArn=
-                topic_arn,
-
-                Subject=
-                "Fraud Alert",
-
-                Message=
-                json.dumps({
-                    "transaction_id":
-                    transaction_id,
-
-                    "user_id":
-                    user_id,
-
-                    "amount":
-                    amount,
-
-                    "decision":
-                    decision,
-
-                    "risk_score":
-                    risk_score,
-
-                    "reasons":
-                    reasons
-                })
-            )
-
-        return {
-            "statusCode":
-            200,
-
-            "body":
-            json.dumps({
-                "status":
-                "success",
-
-                "message":
-                "Transaction processed successfully",
-
-                "data":
-                item
-            })
-        }
+        send_fraud_alert(
+        transaction_id,
+        user_id,
+        amount,
+        decision,
+        risk_score,
+        reasons
+    )
 
     except Exception as e:
 
