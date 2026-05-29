@@ -69,6 +69,7 @@ async function handleAction(
   action: string
 ) {
   try {
+
     const response =
       await fetch(
         `${API_BASE}/transaction-action`,
@@ -83,7 +84,8 @@ async function handleAction(
               API_KEY,
           },
 
-          body: JSON.stringify({
+          body:
+          JSON.stringify({
             transaction_id:
               transactionId,
 
@@ -97,32 +99,55 @@ async function handleAction(
 
     console.log(data)
 
-    // refresh transactions
-    await fetchTransactions()
+    // fetch fresh data
+    const refreshedResponse =
+      await fetch(
+        API_URL,
+        {
+          headers: {
+            'x-api-key':
+              API_KEY,
+          },
+        }
+      )
 
-    // update selected txn
-    setTimeout(() => {
-      const refreshed =
-        transactions.find(
-          (txn) =>
-            txn.transaction_id ===
-            transactionId
-        )
+    const refreshedData =
+      await refreshedResponse.json()
 
-      if (refreshed) {
-        setSelectedTxn(
-          refreshed
-        )
-      }
-    }, 500)
+    const updatedTransactions =
+      refreshedData
+        .transactions || []
+
+    setTransactions(
+      updatedTransactions
+    )
+
+    // instantly refresh panel
+    const updatedTxn =
+      updatedTransactions.find(
+        (
+          txn: Transaction
+        ) =>
+          txn.transaction_id ===
+          transactionId
+      )
+
+    if (updatedTxn) {
+
+      setSelectedTxn(
+        updatedTxn
+      )
+    }
 
   } catch (error) {
+
     console.error(
       'Action failed',
       error
     )
   }
 }
+
   useEffect(() => {
     fetchTransactions()
 
@@ -233,12 +258,20 @@ async function handleAction(
                   Approved
                 </option>
 
-                <option value="FLAGGED">
-                  Flagged
+                <option value="VERIFICATION_REQUIRED">
+                  Verification Required
                 </option>
 
-                <option value="BLOCKED">
-                  Blocked
+                <option value="UNDER_REVIEW">
+                  Under Review
+                </option>
+
+                <option value="DECLINED">
+                  Declined
+                </option>
+
+                <option value="MANUALLY_APPROVED">
+                  Manually Approved
                 </option>
               </select>
               <select
@@ -330,15 +363,24 @@ async function handleAction(
 
                         <td>
                           <span
-                            className={`px-3 py-1 rounded-full text-sm ${
-                              txn.decision ===
-                              'BLOCKED'
+                            className={`px-3 py-1 rounded-full text-sm ${txn.decision ===
+                                'DECLINED'
                                 ? 'bg-red-500/20 text-red-400'
+
                                 : txn.decision ===
-                                  'FLAGGED'
-                                ? 'bg-yellow-500/20 text-yellow-400'
-                                : 'bg-green-500/20 text-green-400'
-                            }`}
+                                  'UNDER_REVIEW'
+                                  ? 'bg-orange-500/20 text-orange-400'
+
+                                  : txn.decision ===
+                                    'VERIFICATION_REQUIRED'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+
+                                    : txn.decision ===
+                                      'MANUALLY_APPROVED'
+                                      ? 'bg-cyan-500/20 text-cyan-400'
+
+                                      : 'bg-green-500/20 text-green-400'
+                              }`}
                           >
                             {
                               txn.decision
