@@ -14,6 +14,10 @@ from notification_service import (
     send_fraud_alert
 )
 
+from audit_service import (
+    log_event
+)
+
 from datetime import (
     datetime,
     timezone,
@@ -23,28 +27,7 @@ from datetime import (
 from boto3.dynamodb.conditions import Key
 
 
-# ==================================
-# LOGGING
-# ==================================
-def log_event(
-    event_type,
-    details
-):
-    log = {
-        "event_type":
-        event_type,
 
-        "timestamp":
-        datetime.now(
-            timezone.utc
-        ).isoformat(),
-
-        **details
-    }
-
-    print(
-        json.dumps(log)
-    )
 
 
 # ==================================
