@@ -2,6 +2,13 @@ from decimal import Decimal
 import json
 import os
 import boto3
+from fraud_engine import (
+    calculate_fraud_score
+)
+
+from decision_engine import (
+    determine_decision
+)
 
 from datetime import (
     datetime,
@@ -637,91 +644,34 @@ def lambda_handler(
         # ==========================
         # RISK SCORING ENGINE
         # ==========================
-        risk_score = 0
-        reasons = []
-
-        # --------------------------
-        # Transaction amount
-        # --------------------------
-        if amount > 10000:
-
-            risk_score += 90
-            reasons.append(
-                "Extremely high amount"
+        fraud_result = (
+            calculate_fraud_score(
+                amount,
+                recent_transactions,
+                average_spend
             )
+        )
 
-        elif amount > 5000:
+        risk_score = (
+            fraud_result[
+                "risk_score"
+            ]
+        )
 
-            risk_score += 70
-            reasons.append(
-                "Very high amount"
-            )
-
-        elif amount > 1000:
-
-            risk_score += 40
-            reasons.append(
-                "High transaction amount"
-            )
-
-        # --------------------------
-        # Velocity attack
-        # --------------------------
-        if len(recent_transactions) >= 5:
-
-            risk_score += 35
-
-            reasons.append(
-                "Velocity threshold exceeded"
-            )
-
-        # --------------------------
-        # Behavioral anomaly
-        # --------------------------
-        if (
-            average_spend > 0
-            and amount >
-            average_spend * 5
-        ):
-
-            risk_score += 30
-
-            reasons.append(
-                "Behavior anomaly"
-            )
-
-        # cap score
-        risk_score = min(
-            risk_score,
-            100
+        reasons = (
+            fraud_result[
+                "reasons"
+            ]
         )
 
         # ==========================
         # DECISION ENGINE
         # ==========================
-        if risk_score <= 30:
-
-            decision = (
-                "APPROVED"
-            )
-
-        elif risk_score <= 70:
-
-            decision = (
-                "VERIFICATION_REQUIRED"
-            )
-
-        elif risk_score <= 85:
-
-            decision = (
-                "UNDER_REVIEW"
-            )
-
-        else:
-
-            decision = (
-                "DECLINED"
-            )
+        decision = (
+        determine_decision(
+            risk_score
+        )
+)
 
         item = {
             "transaction_id":
