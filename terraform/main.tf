@@ -221,15 +221,15 @@ resource "aws_cloudwatch_metric_alarm" "duplicate_transaction_alarm" {
 
   metric_name = "DuplicateTransaction"
 
-  namespace ="FraudGuard"
+  namespace = "FraudGuard"
 
   period = 300
 
   statistic = "Sum"
 
-  threshold = 10
+  threshold = 2
 
-  alarm_description ="Duplicate transactions exceed threshold"
+  alarm_description = "Duplicate transaction spike detected"
 
   alarm_actions = [
     aws_sns_topic.fraud_alerts.arn
