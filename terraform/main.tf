@@ -163,8 +163,7 @@ resource "aws_iam_policy" "dynamodb_policy" {
           "dynamodb:GetItem",
           "dynamodb:Query",
           "dynamodb:Scan",
-          "dynamodb:UpdateItem",
-          "cloudwatch:PutMetricData"
+          "dynamodb:UpdateItem"
         ]
         Resource = [
         aws_dynamodb_table.transactions.arn,
@@ -173,6 +172,28 @@ resource "aws_iam_policy" "dynamodb_policy" {
       }
     ]
   })
+}
+
+resource "aws_iam_policy" "cloudwatch_metrics_policy" {
+  name = "${var.project_name}-${var.environment}-cloudwatch-metrics-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_metrics_policy" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.cloudwatch_metrics_policy.arn
 }
 
 resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
