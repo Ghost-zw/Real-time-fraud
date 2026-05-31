@@ -29,7 +29,21 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 p-6 hidden md:block">
+    <aside className="
+fixed
+left-0
+top-0
+h-screen
+w-64
+bg-slate-900
+border-r
+border-slate-800
+p-6
+hidden
+md:block
+z-50
+overflow-y-auto
+">
       <h1 className="text-3xl font-bold text-cyan-400 mb-10">
         FraudGuard
       </h1>

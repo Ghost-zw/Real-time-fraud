@@ -209,7 +209,7 @@ async function handleAction(
     <div className="min-h-screen bg-slate-950 text-white flex">
       <Sidebar />
 
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <Navbar />
 
         <div className="mb-8">

@@ -163,7 +163,8 @@ resource "aws_iam_policy" "dynamodb_policy" {
           "dynamodb:GetItem",
           "dynamodb:Query",
           "dynamodb:Scan",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "cloudwatch:PutMetricData"
         ]
         Resource = [
         aws_dynamodb_table.transactions.arn,

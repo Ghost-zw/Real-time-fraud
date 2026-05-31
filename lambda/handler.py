@@ -18,6 +18,10 @@ from audit_service import (
     log_event
 )
 
+from metrics_service import (
+    publish_metric
+)
+
 from datetime import (
     datetime,
     timezone,
@@ -285,7 +289,13 @@ def lambda_handler(
                 raise Exception(
                     "action is required"
                 )
+            publish_metric(
+                "AnalystAction"
+            )
 
+            publish_metric(
+                action
+            )
             update_expression = []
             expression_values = {}
 
@@ -482,6 +492,9 @@ def lambda_handler(
                 }
             )
 
+            publish_metric(
+                "DuplicateTransaction"
+            )
             return {
                 "statusCode":
                 200,
@@ -660,6 +673,13 @@ def lambda_handler(
         )
 )
 
+        publish_metric(
+            "TransactionProcessed"
+        )
+
+        publish_metric(
+            decision
+        )
         item = {
             "transaction_id":
             transaction_id,
