@@ -306,3 +306,106 @@ resource "aws_cloudwatch_metric_alarm" "no_transactions_alarm" {
     aws_sns_topic.fraud_alerts.arn
   ]
 }
+
+resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
+  dashboard_name = "${var.project_name}-${var.environment}-operations-dashboard"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          title  = "Transaction Volume"
+          view   = "timeSeries"
+          region = var.aws_region
+
+          metrics = [
+            ["FraudGuard", "TransactionProcessed"],
+            ["FraudGuard", "APPROVED"],
+            ["FraudGuard", "VERIFICATION_REQUIRED"],
+            ["FraudGuard", "UNDER_REVIEW"],
+            ["FraudGuard", "DECLINED"]
+          ]
+
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          title  = "Analyst Actions"
+          view   = "timeSeries"
+          region = var.aws_region
+
+          metrics = [
+            ["FraudGuard", "AnalystAction"],
+            ["FraudGuard", "APPROVE"],
+            ["FraudGuard", "DECLINE"],
+            ["FraudGuard", "FREEZE"],
+            ["FraudGuard", "UNFREEZE"]
+          ]
+
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          title  = "Duplicate Transactions"
+          view   = "timeSeries"
+          region = var.aws_region
+
+          metrics = [
+            ["FraudGuard", "DuplicateTransaction"]
+          ]
+
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          title  = "Risk Decisions"
+          view   = "singleValue"
+          region = var.aws_region
+
+          metrics = [
+            ["FraudGuard", "APPROVED"],
+            ["FraudGuard", "VERIFICATION_REQUIRED"],
+            ["FraudGuard", "UNDER_REVIEW"],
+            ["FraudGuard", "DECLINED"]
+          ]
+
+          period = 300
+          stat   = "Sum"
+        }
+      }
+    ]
+  })
+}
