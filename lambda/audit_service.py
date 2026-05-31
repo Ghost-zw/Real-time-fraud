@@ -1,3 +1,4 @@
+import copy
 import json
 
 from datetime import (
@@ -16,7 +17,9 @@ SENSITIVE_HEADERS = [
 
 def sanitize_event(event):
 
-    safe_event = dict(event)
+    safe_event = copy.deepcopy(
+        event
+    )
 
     headers = (
         safe_event.get("headers")
@@ -52,14 +55,18 @@ def log_event(
     details
 ):
 
+    safe_details = copy.deepcopy(
+        details
+    )
+
     if (
         "raw_event"
-        in details
+        in safe_details
     ):
-        details[
+        safe_details[
             "raw_event"
         ] = sanitize_event(
-            details[
+            safe_details[
                 "raw_event"
             ]
         )
@@ -73,7 +80,7 @@ def log_event(
             timezone.utc
         ).isoformat(),
 
-        **details
+        **safe_details
     }
 
     print(
