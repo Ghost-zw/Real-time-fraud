@@ -30,6 +30,16 @@ resource "aws_sns_topic" "fraud_alerts" {
   name = "${var.project_name}-${var.environment}-alerts"
 }
 
+resource "aws_sns_topic_subscription" "alarm_email" {
+
+  topic_arn = aws_sns_topic.fraud_alerts.arn
+
+  protocol = "email"
+
+  endpoint = "invinciblestechno@gmail.com"
+}
+
+
 # SNS policy
 resource "aws_iam_role_policy_attachment" "lambda_sns" {
   role       = aws_iam_role.lambda_role.name
@@ -201,5 +211,98 @@ resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
   policy_arn = aws_iam_policy.dynamodb_policy.arn
 }
 
+resource "aws_cloudwatch_metric_alarm" "duplicate_transaction_alarm" {
 
+  alarm_name = "FraudGuard-DuplicateTransaction-Spike"
 
+  comparison_operator = "GreaterThanThreshold"
+
+  evaluation_periods = 1
+
+  metric_name = "DuplicateTransaction"
+
+  namespace ="FraudGuard"
+
+  period = 300
+
+  statistic = "Sum"
+
+  threshold = 10
+
+  alarm_description ="Duplicate transactions exceed threshold"
+
+  alarm_actions = [
+    aws_sns_topic.fraud_alerts.arn
+  ]
+}
+
+resource "aws_cloudwatch_metric_alarm" "declined_alarm" {
+
+  alarm_name = "FraudGuard-Declined-Spike"
+
+  comparison_operator = "GreaterThanThreshold"
+
+  evaluation_periods = 1
+
+  metric_name = "DECLINED"
+
+  namespace = "FraudGuard"
+
+  period = 300
+
+  statistic = "Sum"
+
+  threshold = 20
+
+  alarm_actions = [
+    aws_sns_topic.fraud_alerts.arn
+  ]
+}
+
+resource "aws_cloudwatch_metric_alarm" "freeze_alarm" {
+
+  alarm_name =  "FraudGuard-Freeze-Spike"
+
+  comparison_operator = "GreaterThanThreshold"
+
+  evaluation_periods = 1
+
+  metric_name = "FREEZE"
+
+  namespace = "FraudGuard"
+
+  period = 300
+
+  statistic = "Sum"
+
+  threshold = 5
+
+  alarm_actions = [
+    aws_sns_topic.fraud_alerts.arn
+  ]
+}
+
+resource "aws_cloudwatch_metric_alarm" "no_transactions_alarm" {
+
+  alarm_name = "FraudGuard-NoTransactions"
+
+  comparison_operator = "LessThanThreshold"
+
+  evaluation_periods = 2
+
+  metric_name = "TransactionProcessed"
+
+  namespace = "FraudGuard"
+
+  period = 300
+
+  statistic = "Sum"
+
+  threshold = 1
+
+  treat_missing_data = "breaching"
+
+  alarm_actions = [
+    aws_sns_topic.fraud_alerts.arn
+  ]
+}
