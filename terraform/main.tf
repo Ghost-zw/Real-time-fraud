@@ -312,6 +312,10 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
 
   dashboard_body = jsonencode({
     widgets = [
+
+      # ==========================
+      # FRAUD METRICS
+      # ==========================
       {
         type   = "metric"
         x      = 0
@@ -320,9 +324,11 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
         height = 6
 
         properties = {
-          title  = "Transaction Volume"
+          title  = "Fraud Transaction Volume"
           view   = "timeSeries"
           region = var.aws_region
+          period = 300
+          stat   = "Sum"
 
           metrics = [
             ["FraudGuard", "TransactionProcessed"],
@@ -331,9 +337,6 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
             ["FraudGuard", "UNDER_REVIEW"],
             ["FraudGuard", "DECLINED"]
           ]
-
-          period = 300
-          stat   = "Sum"
         }
       },
 
@@ -345,20 +348,18 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
         height = 6
 
         properties = {
-          title  = "Analyst Actions"
-          view   = "timeSeries"
+          title  = "Risk Decision Snapshot"
+          view   = "singleValue"
           region = var.aws_region
-
-          metrics = [
-            ["FraudGuard", "AnalystAction"],
-            ["FraudGuard", "APPROVE"],
-            ["FraudGuard", "DECLINE"],
-            ["FraudGuard", "FREEZE"],
-            ["FraudGuard", "UNFREEZE"]
-          ]
-
           period = 300
           stat   = "Sum"
+
+          metrics = [
+            ["FraudGuard", "APPROVED"],
+            ["FraudGuard", "VERIFICATION_REQUIRED"],
+            ["FraudGuard", "UNDER_REVIEW"],
+            ["FraudGuard", "DECLINED"]
+          ]
         }
       },
 
@@ -370,16 +371,19 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
         height = 6
 
         properties = {
-          title  = "Duplicate Transactions"
+          title  = "Analyst Actions"
           view   = "timeSeries"
           region = var.aws_region
-
-          metrics = [
-            ["FraudGuard", "DuplicateTransaction"]
-          ]
-
           period = 300
           stat   = "Sum"
+
+          metrics = [
+            ["FraudGuard", "AnalystAction"],
+            ["FraudGuard", "APPROVE"],
+            ["FraudGuard", "DECLINE"],
+            ["FraudGuard", "FREEZE"],
+            ["FraudGuard", "UNFREEZE"]
+          ]
         }
       },
 
@@ -391,19 +395,190 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
         height = 6
 
         properties = {
-          title  = "Risk Decisions"
-          view   = "singleValue"
+          title  = "Duplicate Transactions"
+          view   = "timeSeries"
           region = var.aws_region
-
-          metrics = [
-            ["FraudGuard", "APPROVED"],
-            ["FraudGuard", "VERIFICATION_REQUIRED"],
-            ["FraudGuard", "UNDER_REVIEW"],
-            ["FraudGuard", "DECLINED"]
-          ]
-
           period = 300
           stat   = "Sum"
+
+          metrics = [
+            ["FraudGuard", "DuplicateTransaction"]
+          ]
+        }
+      },
+
+      # ==========================
+      # LAMBDA HEALTH
+      # ==========================
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "Lambda Invocations"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Sum"
+
+          metrics = [
+            [
+              "AWS/Lambda",
+              "Invocations",
+              "FunctionName",
+              aws_lambda_function.fraud_handler.function_name
+            ]
+          ]
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 8
+        y      = 12
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "Lambda Errors"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Sum"
+
+          metrics = [
+            [
+              "AWS/Lambda",
+              "Errors",
+              "FunctionName",
+              aws_lambda_function.fraud_handler.function_name
+            ]
+          ]
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 16
+        y      = 12
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "Lambda Duration"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Average"
+
+          metrics = [
+            [
+              "AWS/Lambda",
+              "Duration",
+              "FunctionName",
+              aws_lambda_function.fraud_handler.function_name
+            ]
+          ]
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 0
+        y      = 18
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "Lambda Throttles"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Sum"
+
+          metrics = [
+            [
+              "AWS/Lambda",
+              "Throttles",
+              "FunctionName",
+              aws_lambda_function.fraud_handler.function_name
+            ]
+          ]
+        }
+      },
+
+      # ==========================
+      # API GATEWAY HEALTH
+      # ==========================
+      {
+        type   = "metric"
+        x      = 8
+        y      = 18
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "API Gateway 4XX Errors"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Sum"
+
+          metrics = [
+            [
+              "AWS/ApiGateway",
+              "4xx",
+              "ApiId",
+              aws_apigatewayv2_api.api.id
+            ]
+          ]
+        }
+      },
+
+      {
+        type   = "metric"
+        x      = 16
+        y      = 18
+        width  = 8
+        height = 6
+
+        properties = {
+          title  = "API Gateway 5XX Errors"
+          view   = "timeSeries"
+          region = var.aws_region
+          period = 300
+          stat   = "Sum"
+
+          metrics = [
+            [
+              "AWS/ApiGateway",
+              "5xx",
+              "ApiId",
+              aws_apigatewayv2_api.api.id
+            ]
+          ]
+        }
+      },
+
+      # ==========================
+      # ALARM STATUS
+      # ==========================
+      {
+        type   = "alarm"
+        x      = 0
+        y      = 24
+        width  = 24
+        height = 6
+
+        properties = {
+          title = "FraudGuard Alarm Status"
+
+          alarms = [
+            aws_cloudwatch_metric_alarm.duplicate_transaction_alarm.arn
+          ]
         }
       }
     ]
