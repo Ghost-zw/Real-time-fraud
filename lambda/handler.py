@@ -19,7 +19,8 @@ from audit_service import (
 )
 
 from metrics_service import (
-    publish_metric
+    publish_metric,
+    publish_metrics
 )
 
 from datetime import (
@@ -673,13 +674,28 @@ def lambda_handler(
         )
 )
 
-        publish_metric(
-            "TransactionProcessed"
-        )
+        publish_metrics([
+            {
+                "MetricName":
+                "TransactionProcessed",
 
-        publish_metric(
-            decision
-        )
+                "Value":
+                1,
+
+                "Unit":
+                "Count"
+            },
+            {
+                "MetricName":
+                decision,
+
+                "Value":
+                1,
+
+                "Unit":
+                "Count"
+            }
+        ])
         item = {
             "transaction_id":
             transaction_id,
