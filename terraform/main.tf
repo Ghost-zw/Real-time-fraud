@@ -63,6 +63,7 @@ resource "aws_lambda_function" "fraud_handler" {
     TABLE_NAME = aws_dynamodb_table.transactions.name
     SNS_TOPIC  = aws_sns_topic.fraud_alerts.arn
     API_KEY    = var.api_key
+    FRAUD_EVENTS_QUEUE_URL = aws_sqs_queue.fraud_events_queue.url
   }
 }
   }
@@ -583,4 +584,58 @@ resource "aws_cloudwatch_dashboard" "fraudguard_dashboard" {
       }
     ]
   })
+}
+
+
+      # ==========================
+      # SQS QUEUE
+      # ==========================
+resource "aws_sqs_queue" "fraud_events_dlq" {
+  name = "${var.project_name}-${var.environment}-fraud-events-dlq"
+
+  message_retention_seconds = 1209600
+}
+
+resource "aws_sqs_queue" "fraud_events_queue" {
+  name = "${var.project_name}-${var.environment}-fraud-events-queue"
+
+  visibility_timeout_seconds = 60
+  message_retention_seconds  = 345600
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.fraud_events_dlq.arn
+    maxReceiveCount     = 3
+  })
+}
+
+      # ==========================
+      # SQS POLICY
+      # ==========================
+
+resource "aws_iam_policy" "sqs_policy" {
+  name = "${var.project_name}-${var.environment}-sqs-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = [
+          aws_sqs_queue.fraud_events_queue.arn,
+          aws_sqs_queue.fraud_events_dlq.arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_sqs_policy" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.sqs_policy.arn
 }

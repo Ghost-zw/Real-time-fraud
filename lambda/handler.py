@@ -29,10 +29,11 @@ from datetime import (
     timedelta
 )
 
+from event_queue_service import (
+    send_post_decision_event
+)
+
 from boto3.dynamodb.conditions import Key
-
-
-
 
 
 # ==================================
@@ -724,6 +725,32 @@ def lambda_handler(
         table.put_item(
             Item=item
         )
+        
+        send_post_decision_event({
+            "event_type":
+            "TRANSACTION_DECIDED",
+
+            "transaction_id":
+            transaction_id,
+
+            "user_id":
+            user_id,
+
+            "amount":
+            amount,
+
+            "decision":
+            decision,
+
+            "risk_score":
+            risk_score,
+
+            "reasons":
+            reasons,
+
+            "timestamp":
+            item["timestamp"]
+})
 
         # ==========================
         # SNS ALERTS
