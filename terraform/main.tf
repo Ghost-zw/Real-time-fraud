@@ -639,3 +639,37 @@ resource "aws_iam_role_policy_attachment" "attach_sqs_policy" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.sqs_policy.arn
 }
+
+      # ==========================
+      # Worker Lambda
+      # ==========================
+
+resource "aws_lambda_function" "fraud_event_worker" {
+  function_name = "${var.project_name}-${var.environment}-event-worker"
+  runtime       = var.lambda_runtime
+  handler       = "event_worker.lambda_handler"
+  role          = aws_iam_role.lambda_role.arn
+
+  filename         = "../lambda/lambda.zip"
+  source_code_hash = filebase64sha256("../lambda/lambda.zip")
+
+  timeout     = 30
+  memory_size = 128
+
+  environment {
+    variables = {
+      API_KEY = var.api_key
+    }
+  }
+}
+
+      # ==========================
+      # Connect lambda to SQS
+      # ==========================
+resource "aws_lambda_event_source_mapping" "fraud_events_mapping" {
+  event_source_arn = aws_sqs_queue.fraud_events_queue.arn
+  function_name    = aws_lambda_function.fraud_event_worker.arn
+
+  batch_size = 10
+  enabled    = true
+}
