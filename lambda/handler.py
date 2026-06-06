@@ -33,6 +33,10 @@ from event_queue_service import (
     send_post_decision_event
 )
 
+from eventbridge_service import (
+    publish_post_decision_event
+)
+
 from boto3.dynamodb.conditions import Key
 
 
@@ -751,6 +755,31 @@ def lambda_handler(
             "timestamp":
             item["timestamp"]
 })
+        publish_post_decision_event({
+            "event_type":
+            "TRANSACTION_DECIDED",
+
+            "transaction_id":
+            transaction_id,
+
+            "user_id":
+            user_id,
+
+            "amount":
+            amount,
+
+            "decision":
+            decision,
+
+            "risk_score":
+            risk_score,
+
+            "reasons":
+            reasons,
+
+            "timestamp":
+            item["timestamp"]
+        })
 
         # ==========================
         # SNS ALERTS
