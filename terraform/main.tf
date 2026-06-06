@@ -64,6 +64,7 @@ resource "aws_lambda_function" "fraud_handler" {
     SNS_TOPIC  = aws_sns_topic.fraud_alerts.arn
     API_KEY    = var.api_key
     FRAUD_EVENTS_QUEUE_URL = aws_sqs_queue.fraud_events_queue.url
+    EVENT_BUS_NAME = aws_cloudwatch_event_bus.fraud_events_bus.name
   }
 }
   }
@@ -672,4 +673,99 @@ resource "aws_lambda_event_source_mapping" "fraud_events_mapping" {
 
   batch_size = 10
   enabled    = true
+}
+
+      # ======================================
+      # Eventbridge for Post - decision making
+      # ======================================
+
+resource "aws_cloudwatch_event_bus" "fraud_events_bus" {
+  name = "${var.project_name}-${var.environment}-fraud-events-bus"
+}
+
+      # ======================================
+      # Eventbridge policy
+      # ======================================
+resource "aws_iam_policy" "eventbridge_policy" {
+  name = "${var.project_name}-${var.environment}-eventbridge-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "events:PutEvents"
+        ]
+        Resource = aws_cloudwatch_event_bus.fraud_events_bus.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_eventbridge_policy" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.eventbridge_policy.arn
+}
+
+
+# ==============================
+# EVENTBRIDGE RULE
+# Route post-decision fraud events to SQS
+# ==============================
+resource "aws_cloudwatch_event_rule" "transaction_decided_rule" {
+  name           = "${var.project_name}-${var.environment}-transaction-decided-rule"
+  event_bus_name = aws_cloudwatch_event_bus.fraud_events_bus.name
+
+  event_pattern = jsonencode({
+    source = [
+      "fraudguard.transactions"
+    ]
+
+    detail-type = [
+      "TransactionDecided"
+    ]
+  })
+}
+
+      # ======================================
+      # Eventbridge SQS Target
+      # ======================================
+resource "aws_cloudwatch_event_target" "transaction_decided_sqs_target" {
+  rule           = aws_cloudwatch_event_rule.transaction_decided_rule.name
+  event_bus_name = aws_cloudwatch_event_bus.fraud_events_bus.name
+  target_id      = "SendTransactionDecidedToSQS"
+  arn            = aws_sqs_queue.fraud_events_queue.arn
+}
+
+
+      # ================================================
+      # Eventbridge permisisions to send messages to SQS
+      # ================================================
+resource "aws_sqs_queue_policy" "allow_eventbridge_to_sqs" {
+  queue_url = aws_sqs_queue.fraud_events_queue.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Service = "events.amazonaws.com"
+        }
+
+        Action = "sqs:SendMessage"
+
+        Resource = aws_sqs_queue.fraud_events_queue.arn
+
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_cloudwatch_event_rule.transaction_decided_rule.arn
+          }
+        }
+      }
+    ]
+  })
 }
