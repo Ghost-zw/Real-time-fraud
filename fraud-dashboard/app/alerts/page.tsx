@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
-
+import DemoBanner from '../components/DemoBanner'
 import { API_KEY, API_BASE, API_URL } from '../config'
 
 type Transaction = {
@@ -16,6 +16,10 @@ type Transaction = {
   reasons?: string[]
   timestamp: string
 }
+
+const demoMode =
+  process.env.NEXT_PUBLIC_DEMO_MODE ===
+  'true'
 
 export default function AlertsPage() {
   const [transactions, setTransactions] =
@@ -152,7 +156,7 @@ export default function AlertsPage() {
 
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <Navbar />
-
+        {demoMode && <DemoBanner />}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
             Fraud Alerts
@@ -362,17 +366,22 @@ export default function AlertsPage() {
                           Decline
                         </button>
 
-                        <button
-                          onClick={() =>
-                            handleAction(
-                              selectedAlert.transaction_id,
-                              'FREEZE'
-                            )
-                          }
-                          className="bg-red-500/20 text-red-400 rounded-xl py-3 hover:bg-red-500/30 transition"
-                        >
-                          Freeze
-                        </button>
+                      <button
+                        disabled={demoMode}
+                        onClick={() =>
+                          !demoMode &&
+                          handleAction(
+                            selectedAlert.transaction_id,
+                            'DECLINE'
+                          )
+                        }
+                        className={`rounded-xl py-3 transition ${demoMode
+                            ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                            : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                          }`}
+                      >
+                        Decline
+                      </button>
                       </>
                     )}
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import Navbar from '../components/Navbar'
+import DemoBanner from '../components/DemoBanner'
 import { API_KEY, API_BASE, API_URL } from '../config'
 
 type Transaction = {
@@ -19,6 +20,10 @@ type Transaction = {
   reviewed_at?: string
   action_taken?: string
 }
+
+const demoMode =
+  process.env.NEXT_PUBLIC_DEMO_MODE ===
+  'true'
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] =
@@ -211,6 +216,7 @@ async function handleAction(
 
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <Navbar />
+        {demoMode && <DemoBanner />}
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
@@ -542,48 +548,46 @@ async function handleAction(
 
                 <div className="grid grid-cols-2 gap-3 pt-4">
                   <button
+                    disabled={demoMode}
                     onClick={() =>
+                      !demoMode &&
                       handleAction(
                         selectedTxn.transaction_id,
                         'APPROVE'
                       )
                     }
-                    className="
-    bg-green-600
-    hover:bg-green-700
-    px-4
-    py-2
-    rounded-xl
-    font-medium
-  "
+                    className={`px-4 py-2 rounded-xl font-medium ${demoMode
+                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700'
+                      }`}
                   >
                     Approve
-                  </button>
+</button>
 
                   <button
+                    disabled={demoMode}
                     onClick={() =>
+                      !demoMode &&
                       selectedTxn &&
                       handleAction(
                         selectedTxn.transaction_id,
-                        selectedTxn.account_status ===
-                          'FROZEN'
+                        selectedTxn.account_status === 'FROZEN'
                           ? 'UNFREEZE'
                           : 'FREEZE'
                       )
                     }
-                    className={`
-    px-4 py-2 rounded-xl font-medium
-    ${selectedTxn?.account_status ===
-                        'FROZEN'
-                        ? 'bg-cyan-600 hover:bg-cyan-700'
-                        : 'bg-red-600 hover:bg-red-700'
-                      }
-  `}
+                    className={`px-4 py-2 rounded-xl font-medium ${demoMode
+                        ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                        : selectedTxn?.account_status === 'FROZEN'
+                          ? 'bg-cyan-600 hover:bg-cyan-700'
+                          : 'bg-red-600 hover:bg-red-700'
+                      }`}
                   >
-                    {selectedTxn?.account_status ===
-                      'FROZEN'
-                      ? 'Unfreeze'
-                      : 'Freeze'}
+                    {demoMode
+                      ? 'Demo Mode'
+                      : selectedTxn?.account_status === 'FROZEN'
+                        ? 'Unfreeze'
+                        : 'Freeze'}
                   </button>
                 </div>
               </div>
