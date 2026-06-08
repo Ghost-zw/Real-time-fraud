@@ -156,7 +156,7 @@ export default function AlertsPage() {
 
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <Navbar />
-        {demoMode && <DemoBanner />}
+        {true && <DemoBanner />}
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">
