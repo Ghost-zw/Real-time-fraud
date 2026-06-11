@@ -96,7 +96,8 @@ resource "aws_apigatewayv2_api" "api" {
 
   cors_configuration {
     allow_origins = [
-      "http://localhost:3000"
+      "http://localhost:3000",
+      "https://real-time-fraud.vercel.app"
     ]
 
     allow_methods = [
